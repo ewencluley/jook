@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html lang="en" ng-app="partifyApp">
+<head>
+    <meta charset="UTF-8">
+    <title>Title</title>
+    <script src="scripts/angular/angular.min.js"></script>
+    <script src="scripts/angular-animate/angular-animate.min.js"></script>
+    <script src="scripts/angular-route/angular-route.min.js"></script>
+    <script src="angular_app.js"></script>
+    <script src="scripts/ui-bootstrap/ui-bootstrap-tpls.js"></script>
+    <link type="text/css" rel="stylesheet" href="scripts/bootstrap/css/bootstrap.min.css">
+    <style>
+        .artist_card{
+            display: table;
+        }
+        .artist_card > img{
+            width:64px;
+            height:64px;
+            display: table-cell;
+        }
+        .artist_card > h1{
+            display: table-cell;
+            vertical-align: middle;
+        }
+    </style>
+</head>
+<body>
+<a href="search">Search</a>
+<!-- MAIN CONTENT AND INJECTED VIEWS -->
+<div id="main" ng-controller="UserController as user">
+
+    <!-- angular templating -->
+    <!-- this is where content will be injected -->
+    <div ng-view></div>
+
+</div>
+
+</div>
+</body>
+</html>

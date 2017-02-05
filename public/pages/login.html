@@ -1,0 +1,19 @@
+
+<div class="well" ng-if="hostsName"> {{hostsName}}'s party</div>
+<uib-accordion close-others="true">
+    <div uib-accordion-group class="panel-default" heading="Join The Party" is-open="true" >
+        <form ng-submit="login()" role="form">
+            <input type="text" placeholder="Your name..." ng-model="user.login.username"/>
+            <input type="text" placeholder="Your password..." ng-model="user.login.password"/>
+            <input type="submit" value="Login"/>
+        </form>
+    </div>
+    <div uib-accordion-group class="panel-default" heading="Start A New Party" >
+        <form ng-submit="newParty()" role="register">
+            <input type="text" placeholder="Your name..." ng-model="user.newparty.username"/>
+            <input type="text" placeholder="Your host password..." ng-model="user.newparty.password"/>
+            <input type="submit" value="Create"/>
+        </form>
+    </div>
+</uib-accordion>
+</div>
