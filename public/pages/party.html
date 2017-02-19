@@ -1,0 +1,22 @@
+<div ng-show="party">
+
+
+    <div>
+        Host: {{party.hostsName}}
+    </div>
+    <div>
+        Guests:
+        <ul>
+            <li ng-repeat="guest in party.guests">{{guest}}</li>
+        </ul>
+    </div>
+
+</div>
+<div ng-show="!party">
+    <div>Create a new party</div>
+    <form ng-submit="createParty()" role="form">
+        <input type="text" placeholder="Your name..." ng-model="newparty.username"/>
+        <input type="text" placeholder="Your password..." ng-model="newparty.password"/>
+        <input type="submit" value="Login"/>
+    </form>
+</div>

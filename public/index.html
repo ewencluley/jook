@@ -3,12 +3,12 @@
 <head>
     <meta charset="UTF-8">
     <title>Title</title>
-    <script src="scripts/angular/angular.min.js"></script>
-    <script src="scripts/angular-animate/angular-animate.min.js"></script>
-    <script src="scripts/angular-route/angular-route.min.js"></script>
+    <script src="bower_components/angular/angular.min.js"></script>
+    <script src="bower_components/angular-route/angular-route.min.js"></script>
+    <script src="bower_components/angular-bootstrap/ui-bootstrap-tpls.js"></script>
     <script src="angular_app.js"></script>
-    <script src="scripts/ui-bootstrap/ui-bootstrap-tpls.js"></script>
-    <link type="text/css" rel="stylesheet" href="scripts/bootstrap/css/bootstrap.min.css">
+
+    <link type="text/css" rel="stylesheet" href="bower_components/bootstrap/dist/css/bootstrap.min.css">
     <style>
         .artist_card{
             display: table;
@@ -25,16 +25,30 @@
     </style>
 </head>
 <body>
-<a href="search">Search</a>
+<nav class="navbar navbar-default">
+    <div class="container-fluid">
+        <div class="navbar-header">
+            <a class="navbar-brand" href="#">Jook</a>
+        </div>
+        <ul class="nav navbar-nav">
+            <li><a href="#party">Party</a></li>
+            <li><a href="#login">Join Party</a></li>
+            <li><a href="#search">Search</a></li>
+        </ul>
+    </div>
+</nav>
+<div ng-controller="AlertController" class="col-xs-12">
+    <script type="text/ng-template" id="alert.html">
+        <div ng-transclude></div>
+    </script>
+    <div uib-alert ng-repeat="alert in alerts" ng-class="'alert-' + (alert.type || 'warning')" close="closeAlert($index)">{{alert.msg}}</div>
+</div>
 <!-- MAIN CONTENT AND INJECTED VIEWS -->
-<div id="main" ng-controller="UserController as user">
 
     <!-- angular templating -->
     <!-- this is where content will be injected -->
+<div id="main">
     <div ng-view></div>
-
-</div>
-
 </div>
 </body>
 </html>

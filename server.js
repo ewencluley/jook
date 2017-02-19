@@ -1,17 +1,16 @@
-var express = require('express')
-var request = require('request'); // "Request" library
-var querystring = require('querystring');
-var cookieParser = require('cookie-parser');
+var express  = require('express');
+var app      = express();// create our app w/ express
+
+var path =  require("path");
+var morgan = require('morgan');             // log requests to the console (express4)
+var methodOverride = require('method-override'); // simulate DELETE and PUT (express4)
+
 var Mopidy = require("mopidy");
 var bodyParser = require('body-parser');
 
 const session = require('express-session')
 
 var app = express();
-/*app.use(function (req, res, next) {
-    res.header("Content-Type",'application/json');
-    next();
-});*/
 var passport = require('passport')
     , LocalStrategy = require('passport-local').Strategy;
 
@@ -20,8 +19,7 @@ app.use(bodyParser.urlencoded({ extended: true })); // support encoded bodies
 app.use(passport.initialize());
 app.use(passport.session());
 
-app.use(express.static(__dirname + '/public'))
-    .use(cookieParser());
+app.use(express.static(__dirname + '/public'));                 // set the static files location /public/img will be /img for users
 
 app.use('/scripts/ui-bootstrap', express.static(__dirname + '/node_modules/angular-ui-bootstrap/dist/'));
 app.use('/scripts/angular-animate', express.static(__dirname + '/node_modules/angular-animate/'));
@@ -29,6 +27,12 @@ app.use('/scripts/angular-route', express.static(__dirname + '/node_modules/angu
 app.use('/scripts/bootstrap/', express.static(__dirname + '/node_modules/bootstrap/dist/'));
 app.use('/scripts/angular/', express.static(__dirname + '/node_modules/angular/'));
 
+
+app.use(morgan('dev'));                                         // log every request to the console
+app.use(bodyParser.urlencoded({'extended':'true'}));            // parse application/x-www-form-urlencoded
+app.use(bodyParser.json());                                     // parse application/json
+app.use(bodyParser.json({ type: 'application/vnd.api+json' })); // parse application/vnd.api+json as json
+app.use(methodOverride());
 
 passport.serializeUser(function(user, done) {
     done(null, user.username);
@@ -67,20 +71,21 @@ var mopidy = new Mopidy({
 });
 
 var party;
-
+var rootPath = "/api/v1";
 /* Guest Login */
-app.post('/login', function (req, res) {
+app.post(rootPath+'/login', function (req, res) {
     if(!party){
-        res.status(403).send({errorCode:403, message:"There is no party to join"});
+        res.status(404).send({errorCode:404, message:"There is no party to join"});
         return;
     }else if(party.guests.filter(function(guest){return guest.username == req.body.username;})[0]){
         res.status(403).send({errorCode:403, message:"User is already logged in."});
         return;
     }else{
-        var currentState = {guests:party.guests.map(function(user){return {username:user.username}})};
 
         var guest = {username:req.body.username, password:req.body.password};
         party.guests.push(guest);
+        var currentState = {guests:party.guests.map(function(user){return {username:user.username}})};
+
 
         var printCurrentTrack = function (track) {
             currentState.hostsName = party.hostsName;
@@ -99,7 +104,7 @@ app.post('/login', function (req, res) {
     }
 });
 
-app.post('/party/skiptrackvote', passport.authenticate('local', { session: false }), function(req, res){
+app.post(rootPath+'/party/skiptrackvote', passport.authenticate('local', { session: false }), function(req, res){
     var voteBy = req.body.username;
     var guest = party.guests.filter(function(guest){
         return guest.username == voteBy;
@@ -122,7 +127,7 @@ app.post('/party/skiptrackvote', passport.authenticate('local', { session: false
     }
 });
 
-app.post('/party/queue/track', passport.authenticate('local', { session: false }), function (req, res){
+app.post(rootPath+'/party/queue/track', passport.authenticate('local', { session: false }), function (req, res){
     if(!party){
         res.status(403).send({errorCode:403, message:"There is no party"});
         return;
@@ -145,13 +150,13 @@ app.post('/party/queue/track', passport.authenticate('local', { session: false }
 
 });
 
-app.get('/party', function (req, res){
+app.get(rootPath+'/party', function (req, res){
     if(!party){
         res.status(404).send({errorCode:404, message:"There is no current party."});
     }else{
         var currentState = {};
         currentState.hostsName = party.hostsName;
-        currentState.guests = party.guests.map(function(guest){ return guest.username; });
+        currentState.guests = party.guests.map(function(guest){ return {username:guest.username} });
 
         mopidy.tracklist.setConsume(true); //remove tracks once played
 
@@ -176,7 +181,7 @@ app.get('/party', function (req, res){
     }
 });
 
-app.get('/media', function(req, res){
+app.get(rootPath+'/media', function(req, res){
     var q = req.query.q.split(":");
     var field = q[0];
     var query = q[1];
@@ -192,7 +197,7 @@ app.get('/media', function(req, res){
 });
 
 /* Create a new party */
-app.post('/party', function (req, res) {
+app.post(rootPath+'/party', function (req, res) {
 
     if(party){
         res.status(403).send({errorCode:403, message:"There is already a party in progress, you cannot create a new one until that one is finished!"})
@@ -209,7 +214,7 @@ app.post('/party', function (req, res) {
 });
 
 app.get('*', function (req, res) {
-    res.sendFile(express.static(__dirname + '/public/index.html'));
+    res.sendFile(path.join(__dirname, '/public', 'index.html'));
 });
 
 app.listen(3000, function () {
