@@ -1,14 +1,41 @@
-var jookApp = angular.module('jook22222', ['ngRoute', 'ui.bootstrap']);
+var jookApp = angular.module('jookApp', ['ngRoute', 'ui.bootstrap']);
 jookApp.config(['$locationProvider', function($locationProvider) {
     $locationProvider.hashPrefix('');
 }]);
+jookApp.run(['$rootScope', '$location', function($root, $location) {
+    $root.$on('$routeChangeStart', function(e, curr, prev) {
+        if (curr.$$route && curr.$$route.resolve) {
+            // Show a loading message until promises aren't resolved
+            $root.loadingView = true;
+        }
+    });
+    $root.$on('$routeChangeSuccess', function(e, curr, prev) {
+        // Hide loading message
+        $root.loadingView = false;
+    });
+    $root.$on('$routeChangeError', function(event, toState, toParams, fromState, fromParams, error){
+        // this is required if you want to prevent the $UrlRouter reverting the URL to the previous valid location
+        event.preventDefault();
+        // Hide loading message
+        $root.loadingView = false;
+        if(fromState.status == 404  && toState.originalPath == '/home'){
+            $location.path("/party");
+        }
+    });
+}]);
+
 jookApp.config(function($routeProvider) {
     $routeProvider
 
     // route for the home page
         .when('/party', {
             templateUrl : 'pages/party.html',
-            controller  : PartyController
+            controller  : 'PartyController',
+            resolve: {
+                party : function(srvLibrary) {
+                    return srvLibrary.getParty();
+                }
+            }
         })
 
         .when('/search', {
@@ -23,22 +50,34 @@ jookApp.config(function($routeProvider) {
 
         .when('/home', {
             templateUrl : 'pages/home.html',
-            controller  : 'Avengers',
+            controller  : 'HomeController',
             resolve: {
-                moviesPrepService: moviesPrepService
+                party : function(srvLibrary) {
+                    return srvLibrary.getParty();
+                }
             }
         })
 
         .otherwise({ redirectTo: '/home' });
 });
 
-function moviesPrepService() {
-    return [{title:"mov1"},{title:"mov2"}];
-}
 
-jookApp.controller('Avengers', function Avengers($scope) {
-        console.log("here")
-});
+jookApp.factory('srvLibrary', ['$http', function($http) {
+    var sdo = {
+        getParty: function() {
+            var promise = $http.get('api/v1/party');
+            promise.then(function(response) {
+                console.log(response);
+                return response.data;
+            }, function (response) {
+                console.log("woops!");
+                return {message:"No party!"};
+            });
+            return promise;
+        }
+    }
+    return sdo;
+}]);
 
 
 // Define the `PhoneListController` controller on the `phonecatApp` module
@@ -60,7 +99,7 @@ jookApp.controller('UserController', function UserController($scope, $http, $htt
 
 });
 
-jookApp.controller('PartyController', function PartyController($scope, $http, $httpParamSerializerJQLike, $rootScope, $location) {
+jookApp.controller('PartyController', function PartyController($scope, $http, $httpParamSerializerJQLike, $rootScope, $location, party) {
     $scope.createParty = function(){
         $http({
             method  : 'POST',
@@ -89,8 +128,8 @@ jookApp.controller('SearchController', function SearchController($scope, $http, 
     }
 });
 
-jookApp.controller('HomeController', function HomeController($scope) {
-
+jookApp.controller('HomeController', function HomeController($scope,party) {
+    console.log(party);
     $scope.party = party.data;
     // if(!party){
     //     $location.path("/party");
