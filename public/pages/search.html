@@ -1,3 +1,13 @@
-<div>
-    <input type="text"/><button type="submit" value="search"/>
+<form ng-submit="search()" class="input-group" id="adv-search">
+    <input type="text" class="form-control" placeholder="Search for snippets" ng-model="query"/>
+
+    <div class="input-group-btn">
+        <div class="btn-group" role="group">
+            <button type="submit" class="btn btn-primary"><span class="glyphicon glyphicon-search"
+                                                                aria-hidden="true"></span></button>
+        </div>
+    </div>
+</form>
+<div class="col-xs-12">
+    <div class="well" ng-repeat="track in searchResults.tracks"><a href="" ng-click="play(track.uri)">{{track.name}} - <span ng-repeat="artist in track.artists">{{artist.name}}</span></a> </div>
 </div>

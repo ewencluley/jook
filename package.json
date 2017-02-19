@@ -9,16 +9,17 @@
   "author": "Ewen Cluley",
   "license": "ISC",
   "dependencies": {
+    "body-parser": "^1.4.3",
     "cookie-parser": "^1.4.3",
     "express": "^4.14.0",
     "express-session": "^1.14.2",
+    "method-override": "^2.1.3",
     "mopidy": "^0.5.0",
+    "morgan": "^1.1.1",
     "passport": "^0.3.2",
     "passport-local": "^1.0.0",
     "request": "^2.79.0",
     "request-promise": "^4.1.1",
-    "body-parser"    : "^1.4.3",
-    "method-override": "^2.1.3",
-    "morgan"         : "^1.1.1"
+    "uuid": "^3.0.1"
   }
 }

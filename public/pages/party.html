@@ -1,22 +1,51 @@
-<div ng-show="party">
+<div ng-show="!party.noParty">
 
 
     <div>
-        Host: {{party.hostsName}}
+        Host: {{party.host.username}}
     </div>
     <div>
         Guests:
         <ul>
-            <li ng-repeat="guest in party.guests">{{guest}}</li>
+            <li ng-repeat="guest in party.guests">{{guest.username}}</li>
+        </ul>
+    </div>
+    <div>
+        Playlist:
+        <ul>
+            <li ng-repeat="track in party.tracklist">{{track.track.name}} - {{track.track.artists[0].name}}</li>
         </ul>
     </div>
 
 </div>
-<div ng-show="!party">
-    <div>Create a new party</div>
-    <form ng-submit="createParty()" role="form">
-        <input type="text" placeholder="Your name..." ng-model="newparty.username"/>
-        <input type="text" placeholder="Your password..." ng-model="newparty.password"/>
-        <input type="submit" value="Login"/>
-    </form>
+<div>
+    <!-- new party form -->
+    <div ng-show="party.noParty">
+        <div>Create a new party</div>
+        <form ng-submit="party.noParty ? createParty() : updateParty()" role="form">
+            <input type="text" placeholder="Your name..." ng-model="partysettings.host.username"/>
+            <div>{{deviceFingerprint}}</div>
+            <input type="submit" value="Login"/>
+        </form>
+
+        Guests:
+        <ul>
+            <li ng-repeat="guest in party.guests">{{guest.username}}</li>
+        </ul>
+    </div>
+
+    <!-- modify party form -->
+    <div ng-show="!party.noParty && userUUID && (userUUID == party.host.password)">
+        <div>Party settings</div>
+        <form ng-submit="party.noParty ? createParty() : updateParty()" role="form">
+            <input type="text" placeholder="Your name..." ng-model="partysettings.host.username"/>
+            <div>{{deviceFingerprint}}</div>
+            <input type="submit" value="Login"/>
+        </form>
+
+        Guests:
+        <ul>
+            <li ng-repeat="guest in party.guests">{{guest.username}}</li>
+        </ul>
+    </div>
 </div>

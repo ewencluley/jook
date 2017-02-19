@@ -1,4 +1,4 @@
-var jookApp = angular.module('jookApp', ['ngRoute', 'ui.bootstrap']);
+var jookApp = angular.module('jookApp', ['ngRoute', 'ui.bootstrap', 'ngCookies']);
 jookApp.config(['$locationProvider', function($locationProvider) {
     $locationProvider.hashPrefix('');
 }]);
@@ -13,15 +13,6 @@ jookApp.run(['$rootScope', '$location', function($root, $location) {
         // Hide loading message
         $root.loadingView = false;
     });
-    $root.$on('$routeChangeError', function(event, toState, toParams, fromState, fromParams, error){
-        // this is required if you want to prevent the $UrlRouter reverting the URL to the previous valid location
-        event.preventDefault();
-        // Hide loading message
-        $root.loadingView = false;
-        if(fromState.status == 404  && toState.originalPath == '/home'){
-            $location.path("/party");
-        }
-    });
 }]);
 
 jookApp.config(function($routeProvider) {
@@ -32,8 +23,8 @@ jookApp.config(function($routeProvider) {
             templateUrl : 'pages/party.html',
             controller  : 'PartyController',
             resolve: {
-                party : function(srvLibrary) {
-                    return srvLibrary.getParty();
+                party : function(srvParty) {
+                    return srvParty.getParty();
                 }
             }
         })
@@ -52,8 +43,8 @@ jookApp.config(function($routeProvider) {
             templateUrl : 'pages/home.html',
             controller  : 'HomeController',
             resolve: {
-                party : function(srvLibrary) {
-                    return srvLibrary.getParty();
+                party : function(srvParty) {
+                    return srvParty.getParty();
                 }
             }
         })
@@ -62,26 +53,27 @@ jookApp.config(function($routeProvider) {
 });
 
 
-jookApp.factory('srvLibrary', ['$http', function($http) {
-    var sdo = {
+jookApp.factory('srvParty', ['$http', function($http) {
+    var partyService = {
         getParty: function() {
-            var promise = $http.get('api/v1/party');
-            promise.then(function(response) {
+            var promise = $http.get('api/v1/party').then(function(response) {
                 console.log(response);
                 return response.data;
             }, function (response) {
                 console.log("woops!");
-                return {message:"No party!"};
+                if(response.status = 404){
+                    return {noParty:true};
+                }else{
+                    throw {broken:"something really bad has gone wrong.  Unhandled"}
+                }
             });
             return promise;
         }
     }
-    return sdo;
+    return partyService;
 }]);
 
-
-// Define the `PhoneListController` controller on the `phonecatApp` module
-jookApp.controller('UserController', function UserController($scope, $http, $httpParamSerializerJQLike, $rootScope) {
+jookApp.controller('UserController', function UserController($scope, $http, $httpParamSerializerJQLike, $rootScope, $cookies) {
     $scope.login = function () {
         $http({
             method: 'POST',
@@ -89,8 +81,8 @@ jookApp.controller('UserController', function UserController($scope, $http, $htt
             data: $httpParamSerializerJQLike($scope.user.login),  // pass in data as strings
             headers: {'Content-Type': 'application/x-www-form-urlencoded'}  // set the headers so angular passing info as form data (not request payload)
         }).then(function (response) {
-            $scope.hostsName = response.data.hostsName;
-            $scope.yourName = $scope.login.guestsName;
+            $cookies.put('userUUID', response.data.password);
+            $cookies.put('username', response.data.username);
         }, function myError(response) {
             $rootScope.$broadcast("alert", { status: response.status, message:response.data.message });
         });
@@ -99,43 +91,67 @@ jookApp.controller('UserController', function UserController($scope, $http, $htt
 
 });
 
-jookApp.controller('PartyController', function PartyController($scope, $http, $httpParamSerializerJQLike, $rootScope, $location, party) {
+jookApp.controller('PartyController', function PartyController($scope, $http, $httpParamSerializerJQLike, $rootScope, $location, $cookies, party) {
+
+    $scope.party = party;
+    $scope.partysettings = JSON.parse(JSON.stringify(party));
+    $scope.userUUID = $cookies.get('userUUID');
+    $scope.updateParty = function(){
+        $scope.callPartyService('PUT');
+    };
     $scope.createParty = function(){
+        $scope.callPartyService('POST');
+    };
+    $scope.callPartyService = function(method){
         $http({
-            method  : 'POST',
+            method  : method,
             url     : '/api/v1/party',
-            data    : $httpParamSerializerJQLike($scope.newparty),  // pass in data as strings
+            data    : $httpParamSerializerJQLike({username : $scope.partysettings.host.username, password : $scope.deviceFingerprint}),  // pass in data as strings
             headers : { 'Content-Type': 'application/x-www-form-urlencoded' }  // set the headers so angular passing info as form data (not request payload)
         }).then(function(response) {
+            $cookies.put('userUUID', response.data.password);
+            $cookies.put('username', response.data.username);
             $rootScope.$broadcast("alert", { status: response.status, message:"Party started, now queue some tunes!" });
             $rootScope.party = response.data;
             $location.path("search");
         }, function myError(response) {
             $rootScope.$broadcast("alert", { status: response.status, message:response.data.message });
         });
-    };
-});
-
-
-jookApp.controller('SearchController', function SearchController($scope, $http, $httpParamSerializerJQLike) {
-
-
-    $scope.search = function(){
-        $http.get("/api/v1/media?q="+$scope.searchQuery)
-            .then(function(response) {
-                $scope.searchResults = response.data;
-            });
     }
 });
 
-jookApp.controller('HomeController', function HomeController($scope,party) {
+
+jookApp.controller('SearchController', function SearchController($scope, $http, $httpParamSerializerJQLike, $cookies) {
+    $scope.userUUID = $cookies.get('userUUID');
+
+    $scope.search = function(){
+        $http.get("/api/v1/media?q="+$scope.query)
+            .then(function(response) {
+                $scope.searchResults = response.data[0];
+            });
+    };
+
+    $scope.play = function(uri){
+        $http({
+            method  : 'PUT',
+            url     : '/api/v1/queue/track',
+            data    : $httpParamSerializerJQLike({username : "harcoded", password : $scope.userUUID, uri: uri}),  // pass in data as strings
+            headers : { 'Content-Type': 'application/x-www-form-urlencoded' }  // set the headers so angular passing info as form data (not request payload)
+        })
+            .then(function(response) {
+                console.log(response);
+            });
+    };
+});
+
+jookApp.controller('HomeController', function HomeController($scope, $rootScope, $location, party) {
     console.log(party);
-    $scope.party = party.data;
-    // if(!party){
-    //     $location.path("/party");
-    // }else{
-    //     $location.path("/login");
-    // }
+    if(party.noParty){
+        $location.path("/party");
+        $rootScope.$broadcast("alert", { status: 404, message:"There is no party currently, get started by creating one!" });
+    }else{
+        $location.path("/login");
+    }
 });
 
 jookApp.controller('AlertController', function AlertController($scope) {

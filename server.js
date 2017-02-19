@@ -4,7 +4,7 @@ var app      = express();// create our app w/ express
 var path =  require("path");
 var morgan = require('morgan');             // log requests to the console (express4)
 var methodOverride = require('method-override'); // simulate DELETE and PUT (express4)
-
+const uuidV4 = require('uuid/v4');
 var Mopidy = require("mopidy");
 var bodyParser = require('body-parser');
 
@@ -74,6 +74,7 @@ var party;
 var rootPath = "/api/v1";
 /* Guest Login */
 app.post(rootPath+'/login', function (req, res) {
+    var userUUID = uuidV4();
     if(!party){
         res.status(404).send({errorCode:404, message:"There is no party to join"});
         return;
@@ -82,13 +83,12 @@ app.post(rootPath+'/login', function (req, res) {
         return;
     }else{
 
-        var guest = {username:req.body.username, password:req.body.password};
+        var guest = {username:req.body.username, password:userUUID};
         party.guests.push(guest);
-        var currentState = {guests:party.guests.map(function(user){return {username:user.username}})};
+        var currentState = party;
 
 
         var printCurrentTrack = function (track) {
-            currentState.hostsName = party.hostsName;
             if (track) {
                 currentState.currentTrack = track;
                 console.log("Currently playing:", track.name, "by", track.artists[0].name, "from", track.album.name);
@@ -96,7 +96,7 @@ app.post(rootPath+'/login', function (req, res) {
             } else {
                 console.log("No current track");
             }
-            res.send(JSON.stringify(currentState));
+            res.send(JSON.stringify(guest));
         };
         if(mopidy.playback){
             mopidy.playback.getCurrentTrack().done(printCurrentTrack);
@@ -126,8 +126,8 @@ app.post(rootPath+'/party/skiptrackvote', passport.authenticate('local', { sessi
         res.send({status:"OK"});
     }
 });
-
-app.post(rootPath+'/party/queue/track', passport.authenticate('local', { session: false }), function (req, res){
+//passport.authenticate('local', { session: false }),
+app.put(rootPath+'/queue/track',  function (req, res){
     if(!party){
         res.status(403).send({errorCode:403, message:"There is no party"});
         return;
@@ -154,8 +154,7 @@ app.get(rootPath+'/party', function (req, res){
     if(!party){
         res.status(404).send({errorCode:404, message:"There is no current party."});
     }else{
-        var currentState = {};
-        currentState.hostsName = party.hostsName;
+        var currentState = party;
         currentState.guests = party.guests.map(function(guest){ return {username:guest.username} });
 
         mopidy.tracklist.setConsume(true); //remove tracks once played
@@ -198,16 +197,28 @@ app.get(rootPath+'/media', function(req, res){
 
 /* Create a new party */
 app.post(rootPath+'/party', function (req, res) {
-
+    var hostUUID = uuidV4();
     if(party){
         res.status(403).send({errorCode:403, message:"There is already a party in progress, you cannot create a new one until that one is finished!"})
     }else{
         party = {};
-        party.hostsName = req.body.username;
-        party.password = req.body.password;
+        party.host = {username:req.body.username, password: hostUUID};
         party.guests = [];
         party.votesToSkipCurrentTrack = [];
-        console.log("New party hosted by", party.hostsName);
+        console.log("New party hosted by", party.host.username);
+        res.send(JSON.stringify(party.host));
+    }
+
+});
+
+/* Update party settings */
+app.put(rootPath+'/party', function (req, res) {
+
+    if(!party){
+        res.status(404).send({errorCode:404, message:"There is no current party."});
+    }else{
+        party.host = {username:req.body.username, password: req.body.password};
+        console.log("Party Updated.  Host is", party.host.username);
         res.send(JSON.stringify(party));
     }
 
