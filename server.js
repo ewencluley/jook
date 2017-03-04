@@ -130,28 +130,23 @@ app.post(rootPath+'/login', function (req, res) {
     }
 });
 
-app.post(rootPath+'/party/skiptrackvote', passport.authenticate('local', { session: false }), function(req, res){
-    var voteBy = req.body.username;
+function voteToSkip(voteBy){
+    console.log(voteBy, "voted to skip");
     var guest = party.guests.filter(function(guest){
-        return guest.username == voteBy;
+        return guest.connectionId == voteBy;
     });
-    if(guest.length == 0){
-        res.status(401).send({errorCode:401, message:"You are not part fo this party and need to join before you can vote to skip tracks."});
-        return;
-    }
     if(party.votesToSkipCurrentTrack.indexOf(voteBy) != -1){
-        res.status(403).send({errorCode:403, message:"You have already voted to skip this track, you cannot vote more than once."});
-        return;
+        console.log(voteBy, "has already voted to skip, vote ignored")
     }else {
         party.votesToSkipCurrentTrack.push(voteBy);
+        console.log(voteBy, "voted to skip registered")
         if(party.votesToSkipCurrentTrack.length >= 3){
             console.log("Skipping track due to enough votes.", party.votesToSkipCurrentTrack, "voted to skip.");
             mopidy.playback.next();
             party.votesToSkipCurrentTrack = [];
         }
-        res.send({status:"OK"});
     }
-});
+}
 //passport.authenticate('local', { session: false }),
 app.put(rootPath+'/queue/track',  function (req, res){
     if(!party){
@@ -310,9 +305,15 @@ var server = ws.createServer(function (conn) {
         gatherPartyInfo();
     });
     conn.on("text", function (str) {
-        console.log("Guest with connection",conn.key, "is called", str);
-        party.guests.push({connectionId:conn.key, username:str});
+        var message = JSON.parse(str);
+        if(message.command == "login"){
+            console.log("Guest with connection",conn.key, "is called", str);
+            party.guests.push({connectionId:conn.key, username:str});
+        }else if(message.command == "voteToSkip"){
+            voteToSkip(conn.key);
+        }
         updateGuests();
+
     })
     conn.on("close", function (code, reason) {
         console.log("Connection", conn.key, "closed. Code:", code, ", reason:", reason);

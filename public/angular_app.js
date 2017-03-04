@@ -18,17 +18,6 @@ jookApp.run(['$rootScope', '$location', function ($root, $location) {
 jookApp.config(function ($routeProvider) {
     $routeProvider
 
-    // route for the home page
-        .when('/party', {
-            templateUrl: 'pages/party.html',
-            controller: 'PartyController',
-            resolve: {
-                party: function (srvParty) {
-                    return srvParty.getParty();
-                }
-            }
-        })
-
         .when('/search', {
             templateUrl: 'pages/search.html',
             controller: 'SearchController'
@@ -38,62 +27,9 @@ jookApp.config(function ($routeProvider) {
             controller: 'BrowseController'
         })
 
-        .when('/login', {
-            templateUrl: 'pages/login.html',
-            controller: 'UserController'
-        })
-
-        .when('/home', {
-            templateUrl: 'pages/home.html',
-            controller: 'HomeController',
-            resolve: {
-                party: function (srvParty) {
-                    return srvParty.getParty();
-                }
-            }
-        })
-
-    // .otherwise({ redirectTo: '/home' });
+     .otherwise({ redirectTo: '/search' });
 });
 
-
-jookApp.factory('srvParty', ['$http', function ($http) {
-    var partyService = {
-        getParty: function () {
-            var promise = $http.get('api/v1/party').then(function (response) {
-                console.log(response);
-                return response.data;
-            }, function (response) {
-                console.log("woops!");
-                if (response.status = 404) {
-                    return {noParty: true};
-                } else {
-                    throw {broken: "something really bad has gone wrong.  Unhandled"}
-                }
-            });
-            return promise;
-        }
-    }
-    return partyService;
-}]);
-
-jookApp.controller('UserController', function UserController($scope, $http, $httpParamSerializerJQLike, $rootScope, $cookies) {
-    $scope.login = function () {
-        $http({
-            method: 'POST',
-            url: '/api/v1/login',
-            data: $httpParamSerializerJQLike($scope.user.login),  // pass in data as strings
-            headers: {'Content-Type': 'application/x-www-form-urlencoded'}  // set the headers so angular passing info as form data (not request payload)
-        }).then(function (response) {
-            $cookies.put('userUUID', response.data.password);
-            $cookies.put('username', response.data.username);
-        }, function myError(response) {
-            $rootScope.$broadcast("alert", {status: response.status, message: response.data.message});
-        });
-    };
-
-
-});
 
 jookApp.controller('PartyController', function PartyController($scope, $http, $httpParamSerializerJQLike, $rootScope, $location, $cookies) {
     var connection = new WebSocket("ws://" + window.location.hostname + ":8001");
@@ -103,7 +39,8 @@ jookApp.controller('PartyController', function PartyController($scope, $http, $h
         username = prompt("Please enter your name");
     }while(username == null || username == "");
     connection.onopen = function(event){
-            connection.send(username);
+        var loginObject = {command:"login", username: username}
+        connection.send(JSON.stringify(loginObject));
     }
     connection.onmessage = function (event) {
         var newPartyState = JSON.parse(event.data);
@@ -139,6 +76,10 @@ jookApp.controller('PartyController', function PartyController($scope, $http, $h
             $rootScope.$broadcast("alert", {status: response.status, message: response.data.message});
         });
     }
+    $scope.voteToSkip = function(){
+        var voteToSkip = {command: "voteToSkip", uri: $scope.party.currentTrack.uri}
+        connection.send(JSON.stringify(voteToSkip));
+    }
 });
 
 
@@ -170,19 +111,6 @@ jookApp.controller('SearchController', function SearchController($scope, $http, 
                 console.log(response);
             });
     };
-});
-
-jookApp.controller('HomeController', function HomeController($scope, $rootScope, $location, party) {
-    console.log(party);
-    if (party.noParty) {
-        $location.path("/party");
-        $rootScope.$broadcast("alert", {
-            status: 404,
-            message: "There is no party currently, get started by creating one!"
-        });
-    } else {
-        $location.path("/login");
-    }
 });
 
 jookApp.controller('AlertController', function AlertController($scope) {
