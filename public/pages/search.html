@@ -1,4 +1,4 @@
-<form ng-submit="search()" class="input-group" id="adv-search">
+<form ng-submit="search(query)" class="input-group" id="adv-search">
     <input type="text" class="form-control" placeholder="Search for snippets" ng-model="query"/>
 
     <div class="input-group-btn">
@@ -9,5 +9,30 @@
     </div>
 </form>
 <div class="col-xs-12">
-    <div class="well" ng-repeat="track in searchResults.tracks"><a href="" ng-click="play(track.uri)">{{track.name}} - <span ng-repeat="artist in track.artists">{{artist.name}}</span></a> </div>
+    <uib-tabset active="active">
+        <uib-tab index="0" heading="Static title">
+            <uib-tab-heading>
+                <i class="glyphicon glyphicon-bell"></i> Tracks
+            </uib-tab-heading>
+            <div class="well" ng-repeat="track in searchResults.tracks">
+                <a href="" ng-click="play(track.uri)">
+                    <i ng-class="{ 'fa fa-spotify': track.uri.includes('spotify') }"></i>
+                    {{track.name}} - <span ng-repeat="artist in track.artists">{{artist.name}}{{$last ? '' : ', '}}</span>
+                </a>
+                <div>{{playing[track.uri].playing}}</div>
+            </div>
+        </uib-tab>
+        <uib-tab index="1">
+            <uib-tab-heading>
+                <i class="glyphicon glyphicon-bell"></i> Artists
+            </uib-tab-heading>
+            <div class="well" ng-repeat="artist in searchResults.artists"><a href="" ng-click="lookup(artist.uri)">{{artist.name}}</a> </div>
+        </uib-tab>
+        <uib-tab index="2">
+            <uib-tab-heading>
+                <i class="glyphicon glyphicon-bell"></i> Albums
+            </uib-tab-heading>
+            <div class="well" ng-repeat="album in searchResults.albums"><a href="" ng-click="play(album.uri)">{{album.name}}</a> </div>
+        </uib-tab>
+    </uib-tabset>
 </div>

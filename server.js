@@ -69,6 +69,31 @@ passport.use(new LocalStrategy(
 var mopidy = new Mopidy({
     webSocketUrl: "ws://localhost:6680/mopidy/ws/"
 });
+mopidy.on('event:tracklistChanged', function(){
+    gatherPartyInfo();
+});
+mopidy.on('event:trackPlaybackStarted', function(){
+
+    gatherPartyInfo();
+});
+
+var gatherPartyInfo = function(){
+    var promises = [];
+    var playbackPromise = mopidy.playback.getCurrentTrack();
+    promises.push(playbackPromise);
+    var tracklistPromise = mopidy.tracklist.getTlTracks();
+    promises.push(tracklistPromise);
+    Promise.all(promises).then(function(){
+        updateGuests();
+    });
+    playbackPromise.then(function(track) {
+        party.currentTrack = track;
+    });
+
+    tracklistPromise.then(function(tracklist){
+        party.tracklist = tracklist;
+    });
+}
 
 var party;
 var rootPath = "/api/v1";
@@ -96,6 +121,7 @@ app.post(rootPath+'/login', function (req, res) {
             } else {
                 console.log("No current track");
             }
+            updateGuests();
             res.send(JSON.stringify(guest));
         };
         if(mopidy.playback){
@@ -157,7 +183,6 @@ app.get(rootPath+'/party', function (req, res){
         var currentState = party;
         currentState.guests = party.guests.map(function(guest){ return {username:guest.username} });
 
-        mopidy.tracklist.setConsume(true); //remove tracks once played
 
         if(mopidy.playback){
             mopidy.playback.getCurrentTrack().then(function(track){
@@ -184,9 +209,16 @@ app.get(rootPath+'/media', function(req, res){
     var q = req.query.q.split(":");
     var field = q[0];
     var query = q[1];
+    if(q.length == 2){ //no field is specified
+        field = q[0];
+        query = q[1];
+    }else{
+        field = "any";
+        query = req.query.q;
+    }
     var searchQuery = {};
     searchQuery[field] = query;
-    mopidy.library.search(searchQuery).then(function(results){
+    mopidy.library.search(searchQuery, [], true).then(function(results){
         var totalTracks = results[0].tracks ? results[0].tracks.length : 0;
         var totalArtists = results[0].artists ? results[0].artists.length : 0;
         var totalAlbums = results[0].albums ? results[0].albums.length : 0;
@@ -194,9 +226,38 @@ app.get(rootPath+'/media', function(req, res){
         res.send(JSON.stringify(results));
     });
 });
+app.get(rootPath+'/media/:uri', function(req, res){
+    var uri = req.params.uri;
+    var tracks;
+    var albums;
+    var artist;
+    var searchQuery = {uri:uri};
+    mopidy.library.search(searchQuery, [uri], true).then(function(results) {
+
+        tracks = results[0].filter(function (item) {
+            if (item.type == 'track') {
+                return item;
+            }
+        });
+        albums = results[0].filter(function (item) {
+            if (item.type == 'album') {
+                return item;
+            }
+        });
+    }).then(function(){
+        var searchQuery = {uri:uri};
+        mopidy.library.search(searchQuery).then(function(results){
+            artist = results[0];
+        }).then(function(){
+            var response = [{tracks :tracks, albums:albums, artists:[artist]}];
+            res.send(JSON.stringify(response));
+        });
+    })
+});
 
 /* Create a new party */
 app.post(rootPath+'/party', function (req, res) {
+    mopidy.tracklist.setConsume(true); //remove tracks once played
     var hostUUID = uuidV4();
     if(party){
         res.status(403).send({errorCode:403, message:"There is already a party in progress, you cannot create a new one until that one is finished!"})
@@ -231,3 +292,47 @@ app.get('*', function (req, res) {
 app.listen(3000, function () {
     console.log('Example app listening on port 3000!')
 });
+
+var ws = require("nodejs-websocket")
+
+var connections = [];
+
+function updateGuests(){
+    var partyJSON = JSON.stringify(party);
+    connections.forEach(function(connection){
+        connection.send(partyJSON);
+    });
+}
+var server = ws.createServer(function (conn) {
+    connections.push(conn);
+    console.log("New connection", conn.key);
+    conn.on("open", function(){
+        gatherPartyInfo();
+    });
+    conn.on("text", function (str) {
+        console.log("Guest with connection",conn.key, "is called", str);
+        party.guests.push({connectionId:conn.key, username:str});
+        updateGuests();
+    })
+    conn.on("close", function (code, reason) {
+        console.log("Connection", conn.key, "closed. Code:", code, ", reason:", reason);
+        var relevantGuest = party.guests.filter(function (guest) {
+            return guest.connectionId == conn.key;
+        });
+        var guestIndex = party.guests.indexOf(relevantGuest[0]);
+        if (guestIndex != -1) {
+            party.guests.splice(guestIndex, 1);
+        }
+        var connectionIndex = connections.indexOf(conn);
+        if (connectionIndex != -1) {
+            connections.splice(connectionIndex, 1);
+        }
+        updateGuests();
+    });
+    conn.on('error', function (err) {
+        if (err.code !== 'ECONNRESET') {
+            // Ignore ECONNRESET and re throw anything else
+            throw err
+        }
+    })
+}).listen(8001)

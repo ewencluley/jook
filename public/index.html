@@ -10,18 +10,41 @@
     <script src="angular_app.js"></script>
 
     <link type="text/css" rel="stylesheet" href="bower_components/bootstrap/dist/css/bootstrap.min.css">
+    <link type="text/css" rel="stylesheet" href="bower_components/font-awesome/css/font-awesome.css">
     <style>
-        .artist_card{
+        .artist_card {
             display: table;
         }
-        .artist_card > img{
-            width:64px;
-            height:64px;
+
+        .artist_card > img {
+            width: 64px;
+            height: 64px;
             display: table-cell;
         }
-        .artist_card > h1{
+
+        .artist_card > h1 {
             display: table-cell;
             vertical-align: middle;
+        }
+
+        body, html {
+            height: 100%;
+        }
+
+        footer {
+            position: fixed;
+            bottom: 0;
+            width: 100%;
+            background-color: white;
+            max-height: 100%;
+        }
+
+        .playlist {
+            max-height: 80%;
+        }
+        .modal-body {
+            max-height: 90%;
+            overflow-y: scroll;
         }
     </style>
 </head>
@@ -47,18 +70,69 @@
         </ul>
     </div>
 </nav>
-<div ng-controller="AlertController" class="col-xs-12">
-    <script type="text/ng-template" id="alert.html">
-        <div ng-transclude></div>
-    </script>
-    <div uib-alert ng-repeat="alert in alerts" ng-class="'alert-' + (alert.type || 'warning')" close="closeAlert($index)">{{alert.msg}}</div>
-</div>
+
 <!-- MAIN CONTENT AND INJECTED VIEWS -->
 
-    <!-- angular templating -->
-    <!-- this is where content will be injected -->
+<!-- angular templating -->
+<!-- this is where content will be injected -->
 <div id="main">
     <div ng-view></div>
 </div>
+<footer class="footer">
+    <div ng-controller="AlertController">
+        <script type="text/ng-template" id="alert.html">
+            <div ng-transclude></div>
+        </script>
+        <div ng-repeat="alert in alerts" ng-class="'alert-' + (alert.type || 'warning')" close="closeAlert($index)">
+            {{alert.msg}}
+        </div>
+    </div>
+    <div ng-controller="PartyController as ctrl">
+        <div ng-show="party">
+            <uib-accordion close-others="false">
+                <div uib-accordion-group class="panel-default"
+                     is-open="status.open" is-disabled="false" ng-init="status.open = true">
+                    <uib-accordion-heading>
+                        <i class="fa fa-music"></i>&nbsp;{{party.currentTrack.name}} by
+                        {{party.currentTrack.artists[0].name}}<i class="pull-right glyphicon"
+                                                                 ng-class="{'glyphicon-chevron-down': status.open, 'glyphicon-chevron-right': !status.open}"></i>
+                    </uib-accordion-heading>
+                    <div>
+
+                        <button class="btn"><i class="fa fa-backward"></i></button>
+                        <button class="btn"><i class="fa fa-play"></i></button>
+                        <button class="btn"><i class="fa fa-forward"></i></button>
+
+                        <div ng-controller="ModalDemoCtrl as $ctrl" class="pull-right">
+                            <script type="text/ng-template" id="listModal.html">
+                                <div class="modal-header">
+                                    <h3 class="modal-title" id="modal-title">{{heading}}</h3>
+                                </div>
+                                <div class="modal-body" id="modal-body">
+                                    <ul>
+                                        <li ng-repeat="item in $ctrl.items">
+                                            {{ item.name }}
+                                        </li>
+                                    </ul>
+                                </div>
+                                <div class="modal-footer">
+                                    <button class="btn btn-warning" type="button" ng-click="$ctrl.cancel()">Close
+                                    </button>
+                                </div>
+                            </script>
+                            <button type="button" class="btn btn-default" ng-click="$ctrl.openGuestlist()"><i
+                                    class="fa fa-list"></i></button>
+                            <button type="button" class="btn btn-default" ng-click="$ctrl.openPlaylist()"><i
+                                    class="fa fa-user"></i></button>
+                        </div>
+
+                    </div>
+                </div>
+            </uib-accordion>
+        </div>
+
+    </div>
+
+</footer>
 </body>
 </html>
