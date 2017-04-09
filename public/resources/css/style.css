@@ -1,0 +1,168 @@
+.artist_card {
+    display: table;
+}
+
+.artist_card > img {
+    width: 64px;
+    height: 64px;
+    display: table-cell;
+}
+
+.artist_card > h1 {
+    display: table-cell;
+    vertical-align: middle;
+}
+
+body, html {
+    height: 100%;
+}
+
+uib-accordion {
+    position: fixed;
+    bottom: 0;
+    left:0;
+    width: 100%;
+    background-color: white;
+}
+
+.tablist {
+    margin-bottom: 0;
+}
+
+.playlist {
+    max-height: 80%;
+}
+
+.modal-body {
+    max-height: 90%;
+    overflow-y: scroll;
+}
+.navbar-nav {
+    margin:0;
+}
+.navbar-nav > li {
+    float:none;
+    display:inline-block;
+}
+.navbar-nav > li > a {
+    padding-top: 15px;
+    padding-bottom: 15px;
+}
+.navbar-nav > li.open > ul.dropdown-menu {
+    position: absolute;
+    border: 1px;
+    -webkit-box-shadow: 0 6px 12px rgba(0, 0, 0, 0.175);
+    box-shadow: 0 6px 12px rgba(0, 0, 0, 0.175);
+}
+
+#searchResults{
+    margin: 0px 2px 50px 2px;
+    padding:0;
+}
+
+.btn:focus {
+    outline: none;
+}
+
+.searchResult{
+    cursor: pointer;
+    margin: 2px 5px;
+    position: relative;
+    height:48px;
+    text-overflow: ellipsis;
+    background-color: #2b669a;
+    color:white;
+}
+
+.searchResult.btn{
+    vertical-align: middle;
+}
+
+.searchResult.playing{
+    cursor: default;
+    background-color: darkslategray !important;
+    color: gray !important;
+}
+
+/*.searchResult.spotify{*/
+    /*background-color: #1CCF6E;*/
+    /*color:white;*/
+/*}*/
+
+.playingIn{
+    position: absolute;
+    right:0;
+    bottom:0;
+    background-color: darkred;
+}
+
+.searchResult h1, .searchResult h3{
+    white-space:nowrap;
+    overflow: hidden;
+}
+
+.searchResult img {
+    height:100%;
+}
+
+
+.fa-spotify{
+    color:white;
+}
+
+h1, h3{
+    margin :0
+}
+
+#browseImage{
+    -webkit-mask-image:-webkit-gradient(
+            linear, left top, left bottom,
+            color-stop(0.00,  rgba(0,0,0,1)),
+            color-stop(0.35,  rgba(0,0,0,1)),
+            color-stop(0.60,  rgba(0,0,0,0)));
+    width:100%;
+    margin-bottom: -40%;
+}
+.bottomspacer{
+    height:170px;
+}
+.topspacer{
+    height:50px;
+}
+
+.progress {
+    position: relative;
+}
+
+.progress span {
+    position: absolute;
+    display: block;
+    width: 100%;
+    color: black;
+}
+
+uib-accordion .panel-group{
+    margin-bottom: 0;
+}
+
+.backbutton{
+    width: 52px;
+}
+
+#modal-body td.itemTitle {
+    max-width: 100%;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    /*white-space: nowrap;*/
+}
+
+#modal-body td.boostButton {
+    width: 7em;
+}
+
+#modal-body table{
+    width: 100%;
+}
+#modal-body tr{
+    width: 100%;
+}

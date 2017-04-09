@@ -1,1 +1,20 @@
-<div class="jumbotron">{{artist.name}}</div>
+<div>
+    <img id="browseImage" ng-src="{{browse.image.uri}}"/>
+</div>
+<div class="col-md-6" ng-if="browse.results.tracks && browse.results.tracks.length > 0" >
+    <h1 ng-if="browse.results.albums && browse.results.albums.length > 0">Popular Tracks</h1>
+    <h1 ng-if="!browse.results.albums || browse.results.albums.length == 0">Album Tracks</h1>
+    <div class="row searchResult"
+         ng-class="{ 'spotify': track.uri.includes('spotify'), 'playing':browse.playing[track.uri].inQueue }"
+         ng-click="browse.playing[track.uri].inQueue ? $ctrl.openPlaylist() : play(track.uri)" ng-repeat="track in browse.results.tracks">{{track.name}}
+        <span class="badge playingIn" ng-if="browse.playing[track.uri].playingIn && browse.playing[track.uri].playingIn > 0">Playing in {{browse.playing[track.uri].playingIn}}</span>
+        <span class="badge playingIn" ng-if="browse.playing[track.uri].playingIn == 0">Playing Now!</span>
+    </div>
+</div>
+<div class="col-md-6" ng-if="browse.results.albums && browse.results.albums.length > 0">
+    <h1>Albums</h1>
+    <div class="row searchResult"
+         ng-click=" browseTo(album.uri)"
+         ng-repeat="album in browse.results.albums">{{album.name}}</div>
+</div>
+<div class="bottomspacer"></div>
