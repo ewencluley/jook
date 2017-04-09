@@ -17,12 +17,13 @@ body, html {
     height: 100%;
 }
 
-uib-accordion {
+footer {
     position: fixed;
     bottom: 0;
     left:0;
     width: 100%;
-    background-color: white;
+    background-color: #333333;
+    color: #fff;
 }
 
 .tablist {
@@ -145,10 +146,6 @@ uib-accordion .panel-group{
     margin-bottom: 0;
 }
 
-.backbutton{
-    width: 52px;
-}
-
 #modal-body td.itemTitle {
     max-width: 100%;
     overflow: hidden;
@@ -166,3 +163,49 @@ uib-accordion .panel-group{
 #modal-body tr{
     width: 100%;
 }
+.nowPlayingSymbol{
+    position: absolute;
+}
+.scroll-left {
+    /*height: 50px;*/
+    overflow: hidden;
+    position: relative;
+    margin-left:1.2em;
+}
+.scroll-left p {
+    white-space: nowrap;
+    height: 100%;
+    text-align: center;
+    /* Starting position */
+    /*-moz-transform:translateX(0%);*/
+    /*-webkit-transform:translateX(0%);*/
+    /*transform:translateX(0%);*/
+    /* Apply animation to this element */
+    -moz-animation: scroll-left 10s linear infinite;
+    -webkit-animation: scroll-left 10s linear infinite;
+    animation: scroll-left 10s linear infinite;
+    animation-direction: alternate;
+    animation-delay: 1s;
+}
+/* Move it (define the animation) */
+@-moz-keyframes scroll-left {
+    0%   { -moz-transform: translateX(0%); }
+    100% { -moz-transform: translateX(-100%); }
+}
+@-webkit-keyframes scroll-left {
+    0%   { -webkit-transform: translateX(0%); }
+    100% { -webkit-transform: translateX(-100%); }
+}
+@keyframes scroll-left {
+    0%   {
+        -moz-transform: translateX(0%); /* Browser bug fix */
+        -webkit-transform: translateX(0%); /* Browser bug fix */
+        transform: translateX(0%);
+    }
+    100% {
+        -moz-transform: translateX(-100%); /* Browser bug fix */
+        -webkit-transform: translateX(-100%); /* Browser bug fix */
+        transform: translateX(-100%);
+    }
+}
+

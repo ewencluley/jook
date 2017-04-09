@@ -83,7 +83,7 @@ mopidy.on('event:trackPlaybackStarted', function () {
 mopidy.on('event:trackPlaybackEnded', function(){
     party.tracklist.splice(0, 1); //remove the track that has just finished playing
     mopidy.playback.stop();
-    if(party.tracklist.length > 1){
+    if(party.tracklist.length > 0){
         var max = -Infinity;
         var maxUri;
         for (var i in votesToPlayNext) {

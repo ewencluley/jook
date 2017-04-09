@@ -23,9 +23,11 @@
             <i class="fa fa-music"></i>&nbsp;Jook
         </a>
         <ul class="nav navbar-nav">
-            <li ng-if="browse.stack.length > 0" class="backbutton active" ng-click="browseBack()"><button class="btn"><i class="fa fa-arrow-left"></i>&nbsp;Back</button></li>
+            <li ng-if="browse.stack.length > 0" class="backbutton active" ng-click="browseBack()">
+                <a><i class="fa fa-arrow-left"></i>&nbsp;Back</a>
+            </li>
             <li ng-if="browse.stack.length == 0" class="backbutton active"></li>
-            <li class="active"><a href="#search">Search</a></li>
+            <li class="active"></li>
         </ul>
     </div>
 </div>
@@ -39,67 +41,55 @@
 <div id="main">
     <div ng-view></div>
 </div>
-<uib-accordion close-others="false">
-    <div uib-accordion-group class="panel-default"
-         is-open="status.open" is-disabled="false" ng-init="status.open = false">
-        <uib-accordion-heading>
-            <i class="fa fa-music"></i>&nbsp;{{party.currentTrack.name}} by
-            {{party.currentTrack.artists[0].name}}
-            <button type="button" class="btn btn-default pull-right" ng-click="$ctrl.openGuestlist()"><i
-                    class="fa fa-list"></i></button>
-            <button type="button" class="btn btn-default pull-right" ng-click="$ctrl.openPlaylist()"><i
-                    class="fa fa-user"></i></button>
-            <i class="pull-right glyphicon" ng-class="{'glyphicon-chevron-down': status.open, 'glyphicon-chevron-right': !status.open}"></i>
-        </uib-accordion-heading>
-        <div>
-            <div ng-show='party.config.votesToSkip.unit == "votes"'>
-                <uib-progressbar type="info" value="((party.votesToSkipCurrentTrack.length / party.config.votesToSkip.value) * 100)">
-                    <span>Votes to skip current track</span>
-                </uib-progressbar>
-            </div>
-            <div ng-show='party.config.votesToSkip.unit == "%"'>
-                <uib-progressbar type="info" value="(((party.votesToSkipCurrentTrack.length/party.guests.length)*100) / party.config.votesToSkip.value)*100">
-                    <span>Votes to skip current track</span>
-                </uib-progressbar>
-            </div>
+<footer>
+    <div class="row">
+        <div class="col-xs-12">
 
-            <div class="pull-left">
-                <button class="btn btn-primary" ng-click="voteToSkip()">Vote to skip&nbsp;<i class="fa fa-forward"></i></button>
-            </div>
-
-            <div ng-controller="ModalDemoCtrl as $ctrl" class="pull-right">
-                <script type="text/ng-template" id="listModal.html">
-                    <div class="modal-header">
-                        <h3 class="modal-title" id="modal-title">{{heading}}</h3>
-                    </div>
-                    <div class="modal-body" id="modal-body">
-                        <table class="table">
-                            <tr ng-repeat="item in $ctrl.items.list">
-                                <td class="itemTitle">{{ item.name }}</td>
-                                <td class="boostButton"><button
-                                    ng-if="item.uri && $index > 0"
-                                    class="btn btn-primary pull-right"
-                                    ng-class="{disabled:$ctrl.items.userVoted}"
-                                    ng-click="voteToPlayNext(item.uri)">Boost!</button>
-
-                                    <i ng-if="item.uri && $index == 0" class="fa fa-volume-up pull-right h1"></i>
-                                </td>
-                            </tr>
-                        </table>
-                    </div>
-                    <div class="modal-footer">
-                        <button class="btn btn-warning" type="button" ng-click="$ctrl.cancel()">Close
-                        </button>
-                    </div>
-                </script>
-                <button type="button" class="btn btn-default" ng-click="$ctrl.openGuestlist()"><i
-                        class="fa fa-list"></i></button>
-                <button type="button" class="btn btn-default" ng-click="$ctrl.openPlaylist()"><i
-                        class="fa fa-user"></i></button>
+            <i class="fa fa-music nowPlayingSymbol"></i>
+            <div class="scroll-left"><p>&nbsp;{{party.currentTrack.name}} by {{party.currentTrack.artists[0].name}}&nbsp;{{party.currentTrack.name}} by {{party.currentTrack.artists[0].name}}&nbsp;{{party.currentTrack.name}} by {{party.currentTrack.artists[0].name}}</p>
             </div>
         </div>
     </div>
-</uib-accordion>
+    <div ng-controller="ModalDemoCtrl as $ctrl" class="pull-right">
+        <script type="text/ng-template" id="listModal.html">
+            <div class="modal-header">
+                <h3 class="modal-title" id="modal-title">{{heading}}</h3>
+            </div>
+            <div class="modal-body" id="modal-body">
+                <table class="table">
+                    <tr ng-repeat="item in $ctrl.items.list">
+                        <td class="itemTitle">{{ item.name }}</td>
+                        <td class="boostButton">
+                            <button
+                                    ng-if="item.uri && $index > 0"
+                                    class="btn btn-primary pull-right"
+                                    ng-class="{disabled:$ctrl.items.userVoted}"
+                                    ng-click="voteToPlayNext(item.uri)">Boost!
+                            </button>
+
+                            <i ng-if="item.uri && $index == 0" class="fa fa-volume-up pull-right h1"></i>
+                        </td>
+                    </tr>
+                </table>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-warning" type="button" ng-click="$ctrl.cancel()">Close
+                </button>
+            </div>
+        </script>
+        <div class="row">
+
+            <div class="col-xs-12">
+                <button type="button" class="btn btn-default" ng-click="$ctrl.openGuestlist()"><i
+                        class="fa fa-list"></i>Tracks
+                </button>
+                <button type="button" class="btn btn-default" ng-click="$ctrl.openPlaylist()"><i
+                        class="fa fa-user"></i>Guests
+                </button>
+            </div>
+        </div>
+    </div>
+</footer>
 
 </body>
 </html>
