@@ -81,8 +81,8 @@ mopidy.on('event:trackPlaybackStarted', function () {
 });
 
 mopidy.on('event:trackPlaybackEnded', function(){
-    party.tracklist.splice(0, 1); //remove the track that has just finished playing
     mopidy.playback.stop();
+    party.tracklist.splice(0, 1); //remove the track that has just finished playing
     if(party.tracklist.length > 0){
         var max = -Infinity;
         var maxUri;
@@ -342,8 +342,8 @@ app.get('*', function (req, res) {
     res.sendFile(path.join(__dirname, '/public', 'index.html'));
 });
 
-app.listen(3000, function () {
-    console.log('Example app listening on port 3000!')
+app.listen(80, function () {
+    console.log('Example app listening on port 80!')
 });
 
 var ws = require("nodejs-websocket")

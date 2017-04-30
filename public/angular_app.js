@@ -40,7 +40,7 @@ jookApp.controller('PartyController', function PartyController($scope, $http, $h
     $scope.browse = {};
     $scope.browse.stack = [];
     var mopidy = new Mopidy({
-        webSocketUrl: "ws://"+ window.location.hostname +":6680/mopidy/ws/",
+        webSocketUrl: "ws://jook.local:6680/mopidy/ws/",
         callingConvention: "by-position-or-by-name"
     });
     mopidy.connect();
@@ -150,27 +150,32 @@ jookApp.controller('PartyController', function PartyController($scope, $http, $h
         $anchorScroll();
     };
     $scope.$on("browse", function (event, browseUri) {
-        mopidy.library.browse({uri:browseUri}).then(function(response){
-            $scope.browse.stack.push(browseUri);
-            var albums = response.filter(function(ref){
-               return ref.type == "album";
+        try{
+            mopidy.library.browse({uri:browseUri}).then(function(response){
+                $scope.browse.stack.push(browseUri);
+                var albums = response.filter(function(ref){
+                    return ref.type == "album";
+                });
+                var tracks = response.filter(function(ref){
+                    return ref.type == "track";
+                });
+                if(!$scope.browse.results){
+                    $scope.browse.results = {};
+                }
+                $scope.browse.results.tracks = tracks;
+                $scope.browse.results.albums = albums;
+                console.log("browse done:", response);
+                $scope.$apply();
             });
-            var tracks = response.filter(function(ref){
-                return ref.type == "track";
+            mopidy.library.getImages({"uris":[browseUri]}).then(function(data){
+                $scope.browse.image = data[browseUri][0];
+                console.log(data);
+                $scope.$apply();
             });
-            if(!$scope.browse.results){
-                $scope.browse.results = {};
-            }
-            $scope.browse.results.tracks = tracks;
-            $scope.browse.results.albums = albums;
-            console.log("browse done:", response);
-            $scope.$apply();
-        });
-        mopidy.library.getImages({"uris":[browseUri]}).then(function(data){
-            $scope.browse.image = data[browseUri][0];
-            console.log(data);
-            $scope.$apply();
-        });
+        }catch (err){
+            $location.url("/");
+        }
+
     });
 });
 function findPlaying(searchresults, tracklist){

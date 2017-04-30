@@ -10,7 +10,7 @@
     </div>
 </form>
 <div class="col-xs-12" id="searchResults">
-    <uib-tabset active="active">
+    <uib-tabset active="active" id="artistalbumtrack-tabs">
         <uib-tab index="0" heading="Static title">
             <uib-tab-heading>
                 Tracks&nbsp;<span class="badge">{{search.results.tracks.length}}</span>
@@ -33,8 +33,8 @@
             </uib-tab-heading>
             <div ng-class="{ 'spotify': track.uri.includes('spotify') }"
                  class="searchResult" ng-click=" browseTo(artist.uri) "ng-repeat="artist in search.results.artists">
-                <img ng-if="search.results.images[artist.uri][3]" ng-src="{{search.results.images[artist.uri][3].uri}}"/>
-                <img ng-if="!search.results.images[artist.uri][3]" ng-src="{{search.results.images[artist.uri][2].uri}}"/>
+                <img ng-if="search.results.images[artist.uri].length > 0" ng-src="{{search.results.images[artist.uri][search.results.images[artist.uri].length - 1].uri}}"/>
+                <img ng-if="search.results.images[artist.uri].length == 0" ng-src="../resources/img/artistNoImage.svg"/>
                 {{artist.name}}
             </div>
         </uib-tab>
@@ -43,7 +43,9 @@
                 Albums&nbsp;<span class="badge">{{search.results.albums.length}}</span>
             </uib-tab-heading>
             <div class="searchResult" ng-click=" browseTo(album.uri) " ng-repeat="album in search.results.albums">
-                <img ng-src="{{search.results.images[album.uri][2].uri}}"/>{{album.name}}
+                <img ng-if="search.results.images[album.uri].length > 0" ng-src="{{search.results.images[album.uri][search.results.images[album.uri].length - 1].uri}}"/>
+                <img ng-if="search.results.images[album.uri].length == 0" ng-src="../resources/img/albumNoImage.svg"/>
+                {{album.name}}
             </div>
         </uib-tab>
     </uib-tabset>
