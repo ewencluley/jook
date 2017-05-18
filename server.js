@@ -386,7 +386,7 @@ var server = ws.createServer(function (conn) {
                 console.log("New party created by", party.host.username);
             }
             var guestsWithMatchingUuid = party.guests.filter(function (guest) {
-                guest.userguid == message.userguid
+                return guest.userguid === message.userguid
             })
             if (!guestsWithMatchingUuid || guestsWithMatchingUuid.length == 0) {
                 debug("New guest at party, adding %s (%s)", message.username, message.userguid)
