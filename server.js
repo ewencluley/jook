@@ -4,20 +4,17 @@ var app = express();// create our app w/ express
 var path = require("path");
 var morgan = require('morgan');             // log requests to the console (express4)
 var methodOverride = require('method-override'); // simulate DELETE and PUT (express4)
-const uuidV4 = require('uuid/v4');
 var Mopidy = require("mopidy");
 var bodyParser = require('body-parser');
+const debug = require('debug')('jook');
+
 
 const session = require('express-session')
 
 var app = express();
-var passport = require('passport')
-    , LocalStrategy = require('passport-local').Strategy;
 
 app.use(bodyParser.json()); // support json encoded bodies
 app.use(bodyParser.urlencoded({extended: true})); // support encoded bodies
-app.use(passport.initialize());
-app.use(passport.session());
 
 app.use(express.static(__dirname + '/public'));                 // set the static files location /public/img will be /img for users
 
@@ -34,90 +31,75 @@ app.use(bodyParser.json());                                     // parse applica
 app.use(bodyParser.json({type: 'application/vnd.api+json'})); // parse application/vnd.api+json as json
 app.use(methodOverride());
 
-passport.serializeUser(function (user, done) {
-    done(null, user.username);
-});
-
-passport.deserializeUser(function (username, done) {
-    var user = party.guests.filter(function (guest) {
-        return guest.username == username;
-    })[0];
-    done(null, user);
-});
-
-passport.use(new LocalStrategy(
-    function (username, password, done) {
-        if (!party) {
-            return done(null, false);
-        }
-        var user = party.guests.filter(function (guest) {
-            return guest.username == username;
-        })[0];
-        if (!user) {
-            console.log(username, "is not a member of the party.")
-            return done(null, false);
-        } else if (user.password == password) {
-            console.log(user.username, "successfully authenticated.");
-            return done(null, user);
-        } else {
-            console.log(user.username, "failed to authenticate.")
-            return done(null, false);
-        }
-    }
-));
-
-
-
 var mopidy = new Mopidy({
     webSocketUrl: "ws://localhost:6680/mopidy/ws/"
 });
 mopidy.on('event:tracklistChanged', function () {
+    debug('Mopidy tracklist changed');
     gatherPartyInfo();
 });
 mopidy.on('event:trackPlaybackStarted', function () {
-    party.votesToSkipCurrentTrack = [];
-
+    debug('Mopidy started playback');
     gatherPartyInfo();
 });
 
-mopidy.on('event:trackPlaybackEnded', function(){
-    mopidy.playback.stop();
-    party.tracklist.splice(0, 1); //remove the track that has just finished playing
-    if(party.tracklist.length > 0){
-        var max = -Infinity;
-        var maxUri;
-        for (var i in votesToPlayNext) {
-            if (votesToPlayNext[i] > max) {
-                max = votesToPlayNext[i];
-                maxUri = i;
-            }
-        }
-        var trackToPlayNext;
-        if (max > 0){
-            trackToPlayNext = party.tracklist.filter(function(tlTrack){
-                return tlTrack.uri == maxUri;
-            })[0];
-
-        }else{
-            trackToPlayNext = party.tracklist[0];
-        }
-        var indexOfTrackToPlayNext = party.tracklist.findIndex(x => x.uri==trackToPlayNext.uri);
-        if(indexOfTrackToPlayNext > 0){
-            party.tracklist.splice(indexOfTrackToPlayNext, 1); //remove track to move
-            party.tracklist.splice(0, 0, trackToPlayNext)//add it again at the top
-        }
-        mopidy.tracklist.add(null, null, trackToPlayNext.uri).then(function (data) {
-            console.log(data);
-        }).then(function () {
-            mopidy.playback.getState().then(function (data) {
-                if (data == "stopped") {
-                    mopidy.playback.play();
-                }
-            });
-        });
+mopidy.on('event:trackPlaybackEnded', function () {
+    if(party.tracklist[0]){
+        debug('track "%s" has just ended', party.tracklist[0].name)
     }
-    votesToPlayNext = {};
-    party.votedThisSong = [];
+    mopidy.playback.stop().then(function () {
+        debug('playback stopped')
+        party.tracklist.splice(0, 1); //remove the track that has just finished playing
+        debug('removed the played track from the tracklist in node')
+        if (party.tracklist.length > 0) {
+            debug('there are still remaining tracks to play')
+            var max = -Infinity;
+            var maxUri;
+            for (var i in votesToPlayNext) {
+                if (votesToPlayNext[i] > max) {
+                    max = votesToPlayNext[i];
+                    maxUri = i;
+                }
+            }
+            debug('%s has the most votes with %i', maxUri, max)
+            var trackToPlayNext;
+            if (max > 0) {
+                debug('votes have been cast, finding the track to play next')
+                trackToPlayNext = party.tracklist.filter(function (tlTrack) {
+                    return tlTrack.uri == maxUri;
+                })[0];
+            } else {
+                debug('no track had any votes to be bumped to the top of the queue')
+                trackToPlayNext = party.tracklist[0];
+            }
+            debug('track to play next is %s (%s)', trackToPlayNext.name, trackToPlayNext.uri)
+            var indexOfTrackToPlayNext = party.tracklist.findIndex(x => x.uri == trackToPlayNext.uri);
+            debug('index of track to play next in tracklist is %i', indexOfTrackToPlayNext)
+            if (indexOfTrackToPlayNext > 0) {
+                debug('moving track from position %i to position 0', indexOfTrackToPlayNext)
+                party.tracklist.splice(indexOfTrackToPlayNext, 1); //remove track to move
+                party.tracklist.splice(0, 0, trackToPlayNext)//add it again at the top
+            }
+            debug('adding track to mopidy "%s" (%s)', trackToPlayNext.name, trackToPlayNext.uri)
+            mopidy.tracklist.add(null, null, trackToPlayNext.uri).then(function (data) {
+                debug('track added to mopidy "%s" (%s)', trackToPlayNext.name, trackToPlayNext.uri)
+            }).then(function () {
+                debug('restarting playback')
+                mopidy.playback.play().then(function () {
+                    debug('playback resumed')
+                });
+            });
+        } else {
+            debug('no more tracks to play')
+        }
+        debug('clearing votesToPlayNext')
+        votesToPlayNext = {};
+        debug('clearing votedThisSong')
+        party.votedThisSong = [];
+    }).then(function () {
+        debug('going to update guests')
+        gatherPartyInfo();
+    });
 });
 
 var gatherPartyInfo = function () {
@@ -130,102 +112,114 @@ var gatherPartyInfo = function () {
 var party;
 var rootPath = "/api/v1";
 /* Guest Login */
-app.post(rootPath + '/login', function (req, res) {
-    var userUUID = uuidV4();
-    if (!party) {
-        res.status(404).send({errorCode: 404, message: "There is no party to join"});
-        return;
-    } else if (party.guests.filter(function (guest) {
-            return guest.username == req.body.username;
-        })[0]) {
-        res.status(403).send({errorCode: 403, message: "User is already logged in."});
-        return;
-    } else {
-
-        var guest = {username: req.body.username, password: userUUID};
-        party.guests.push(guest);
-        var currentState = party;
-
-
-        var printCurrentTrack = function (track) {
-            if (track) {
-                currentState.currentTrack = track;
-                console.log("Currently playing:", track.name, "by", track.artists[0].name, "from", track.album.name);
-
-            } else {
-                console.log("No current track");
-            }
-            updateGuests();
-            res.send(JSON.stringify(guest));
-        };
-        if (mopidy.playback) {
-            mopidy.playback.getCurrentTrack().done(printCurrentTrack);
-        }
-    }
-});
+// app.post(rootPath + '/login', function (req, res) {
+//     var userUUID = uuidV4();
+//     if (!party) {
+//         res.status(404).send({errorCode: 404, message: "There is no party to join"});
+//         return;
+//     } else if (party.guests.filter(function (guest) {
+//             return guest.username == req.body.username;
+//         })[0]) {
+//         res.status(403).send({errorCode: 403, message: "User is already logged in."});
+//         return;
+//     } else {
+//
+//         var guest = {username: req.body.username, password: userUUID};
+//         party.guests.push(guest);
+//         var currentState = party;
+//
+//
+//         var printCurrentTrack = function (track) {
+//             if (track) {
+//                 currentState.currentTrack = track;
+//                 console.log("Currently playing:", track.name, "by", track.artists[0].name, "from", track.album.name);
+//
+//             } else {
+//                 console.log("No current track");
+//             }
+//             updateGuests();
+//             res.send(JSON.stringify(guest));
+//         };
+//         if (mopidy.playback) {
+//             mopidy.playback.getCurrentTrack().done(printCurrentTrack);
+//         }
+//     }
+// });
 var votesToPlayNext = {};
-function voteToPlayNext(votersGUID, uri){
-    if(party.votedThisSong.indexOf(votersGUID) == -1){
-        if(!votesToPlayNext[uri]){
+function voteToPlayNext(votersGUID, uri) {
+    if (party.votedThisSong.indexOf(votersGUID) == -1) {
+        if (!votesToPlayNext[uri]) {
             votesToPlayNext[uri] = 0;
         }
-        if(uri != party.tracklist[0].uri){
+        if (uri != party.tracklist[0].uri) {
             votesToPlayNext[uri] = votesToPlayNext[uri] + 1;
             party.votedThisSong.push(votersGUID);
             console.log(votersGUID, "voted to play", uri, "next. It now has", votesToPlayNext[uri], "votes");
-        }else{
+        } else {
             console.log(votersGUID, "voted to play", uri, "next. It is already playing and cannot be voted for next. The UI should have prevented this!");
         }
 
-    }else{
+    } else {
         console.log(votersGUID, "has already voted");
     }
 }
 
-function voteToSkip(votersConnectionKey, votersUsername) {
-    // console.log(votersConnectionKey, "voted to skip");
-    // var guest = party.guests.filter(function (guest) {
-    //     return guest.connectionId == votersConnectionKey;
-    // });
-    // var vote = {connectionKey: votersConnectionKey, username: votersUsername};
-    // if (party.votesToSkipCurrentTrack.indexOf(vote) != -1) {
-    //     console.log(votersConnectionKey, "has already voted to skip, vote ignored")
-    // } else {
-    //     party.votesToSkipCurrentTrack.push(vote);
-    //     console.log(votersConnectionKey, "voted to skip registered");
-    //     if ((party.config.votesToSkip.unit == "votes" && party.votesToSkipCurrentTrack.length >= party.config.votesToSkip.value)
-    //         || (party.config.votesToSkip.unit == "%" && (party.votesToSkipCurrentTrack.length / party.guests.length) >= party.config.votesToSkip.value / 100)) {
-    //         console.log("Skipping track due to enough votes.", party.votesToSkipCurrentTrack, "voted to skip.");
-    //         mopidy.playback.next();
-    //         party.votesToSkipCurrentTrack = [];
-    //     }
-    // }
-    // return;
-    mopidy.playback.next();
-}
-//passport.authenticate('local', { session: false }),
+// function voteToSkip(votersConnectionKey, votersUsername) {
+//     // console.log(votersConnectionKey, "voted to skip");
+//     // var guest = party.guests.filter(function (guest) {
+//     //     return guest.connectionId == votersConnectionKey;
+//     // });
+//     // var vote = {connectionKey: votersConnectionKey, username: votersUsername};
+//     // if (party.votesToSkipCurrentTrack.indexOf(vote) != -1) {
+//     //     console.log(votersConnectionKey, "has already voted to skip, vote ignored")
+//     // } else {
+//     //     party.votesToSkipCurrentTrack.push(vote);
+//     //     console.log(votersConnectionKey, "voted to skip registered");
+//     //     if ((party.config.votesToSkip.unit == "votes" && party.votesToSkipCurrentTrack.length >= party.config.votesToSkip.value)
+//     //         || (party.config.votesToSkip.unit == "%" && (party.votesToSkipCurrentTrack.length / party.guests.length) >= party.config.votesToSkip.value / 100)) {
+//     //         console.log("Skipping track due to enough votes.", party.votesToSkipCurrentTrack, "voted to skip.");
+//     //         mopidy.playback.next();
+//     //         party.votesToSkipCurrentTrack = [];
+//     //     }
+//     // }
+//     // return;
+//     mopidy.playback.next();
+// }
+
+
 function playTrack(connectionKey, uri) {
+    debug('Request to play track %s', uri)
     if (!party) {
+        debug('No party exists')
         return;
     }
-    if (!mopidy.tracklist) {
-        return;
-    }
-    mopidy.library.lookup(uri).then(function(track){
-        if(track[0]){
+    mopidy.library.lookup(uri).then(function (track) {
+        debug('Finding mopidy track for uri %s', uri)
+        if (track[0]) {
+            debug('Found mopidy track for uri %s.  It was %s', uri, track[0].name)
             party.tracklist.push(track[0]);
-            console.log("Added", uri, "to tracklist.");
+            debug('Added "%s" (%s) to tracklist', track[0].name, uri)
         }
         return;
-    }).then(function(){
+    }).then(function () {
+        debug('Getting mopidy plackback state')
         mopidy.playback.getState().then(function (data) {
-            if (data == "stopped") {
+            debug('Mopidy playback is "%s"', data)
+            if (data === "stopped") {
+                debug('Adding track to mopidy tracklist (%s)', uri)
                 mopidy.tracklist.add(null, null, party.tracklist[0].uri).then(function (data) {
-                    mopidy.playback.play();
+                    debug('Added track to mopidy tracklist (%s)', uri)
+                    debug('Telling Mopidy to play')
+                    mopidy.playback.play().then(function () {
+                        debug('Mopidy playback started')
+                    });
                 });
             }
-            if(data == "paused") {
-                mopidy.playback.resume();
+            if (data === "paused") {
+                debug('Telling Mopidy to resume')
+                mopidy.playback.resume().then(function () {
+                    debug('Mopidy playback resumed')
+                });
             }
         });
     });
@@ -274,14 +268,34 @@ app.get(rootPath + '/media', function (req, res) {
         query = req.query.q;
     }
     var searchQuery = {};
-    searchQuery[field] = query;
+    searchQuery[field] = [query];
     mopidy.library.search(searchQuery, [], true).then(function (results) {
+        var albums = [],artists = [],tracks = [];
+        var totalTracks =0, totalArtists=0, totalAlbums =0;
+        results.forEach(function(resultSet) {
+            totalTracks += resultSet.tracks ? resultSet.tracks.length : 0;
+            totalArtists += resultSet.artists ? resultSet.artists.length : 0;
+            totalAlbums += resultSet.albums ? resultSet.albums.length : 0;
+            if (resultSet.albums) {
+                albums = albums.concat(resultSet.albums)
+            }
+            if (resultSet.artists) {
+                artists = artists.concat(resultSet.artists)
+            }
+            if (resultSet.tracks) {
+                tracks = tracks.concat(resultSet.tracks)
+            }
+        });
 
-        var totalTracks = results[0].tracks ? results[0].tracks.length : 0;
-        var totalArtists = results[0].artists ? results[0].artists.length : 0;
-        var totalAlbums = results[0].albums ? results[0].albums.length : 0;
+        var response = {
+            artists:artists,
+            albums:albums,
+            tracks:tracks
+        }
+
+
         console.log("tracks:", totalTracks, ", artists:", totalArtists, ", albums:", totalAlbums);
-        res.send(JSON.stringify(results));
+        res.send(JSON.stringify(response));
     });
 });
 app.get(rootPath + '/media/:uri', function (req, res) {
@@ -309,6 +323,7 @@ app.get(rootPath + '/media/:uri', function (req, res) {
 
 /* Create a new party */
 function createParty(host) {
+    debug('Creating Party')
     mopidy.tracklist.setConsume(true); //remove tracks once played
     mopidy.tracklist.setSingle(true);
     party = {};
@@ -341,9 +356,10 @@ app.put(rootPath + '/party', function (req, res) {
 app.get('*', function (req, res) {
     res.sendFile(path.join(__dirname, '/public', 'index.html'));
 });
-
-app.listen(80, function () {
-    console.log('Example app listening on port 80!')
+const port = process.env.DEBUG ? 3000 : 80
+app.listen(port, function () {
+    debug('Debugging working, jook starting')
+    console.log('Example app listening on port', port)
 });
 
 var ws = require("nodejs-websocket")
@@ -369,11 +385,17 @@ var server = ws.createServer(function (conn) {
                 createParty({username: message.username, connectionKey: conn.key});
                 console.log("New party created by", party.host.username);
             }
-            console.log("Guest with connection", conn.key, "is called", str);
-            party.guests.push({connectionId: conn.key, username: message.username, userguid: message.userguid});
-        } else if (message.command == "voteToSkip") {
-            var connectedUser = getUserByConnectionKey(conn.key);
-            voteToSkip(conn.key, connectedUser.username);
+            var guestsWithMatchingUuid = party.guests.filter(function (guest) {
+                guest.userguid == message.userguid
+            })
+            if (!guestsWithMatchingUuid || guestsWithMatchingUuid.length == 0) {
+                debug("New guest at party, adding %s (%s)", message.username, message.userguid)
+                party.guests.push({connectionId: conn.key, username: message.username, userguid: message.userguid});
+            } else {
+                debug("Guest already at party: %s (%s)", message.username, message.userguid)
+            }
+
+            debug('Guest with connection %s is "%s" (%s)', conn.key, message.username, message.userguid);
         } else if (message.command == "voteToPlayNext") {
             var connectedUser = getUserByConnectionKey(conn.key);
             voteToPlayNext(connectedUser.userguid, message.uri);
@@ -387,24 +409,12 @@ var server = ws.createServer(function (conn) {
     conn.on("close", function (code, reason) {
         console.log("Connection", conn.key, "closed. Code:", code, ", reason:", reason);
 
-        //remove guest
-        var relevantGuest = getUserByConnectionKey(conn.key);
-        var guestIndex = party.guests.indexOf(relevantGuest);
-        if (guestIndex != -1) {
-            party.guests.splice(guestIndex, 1);
-        }
-
         //remove connection
         var connectionIndex = connections.indexOf(conn);
         if (connectionIndex != -1) {
             connections.splice(connectionIndex, 1);
         }
 
-        //delete any votes cast
-        var remainingVotes = party.votesToSkipCurrentTrack.filter(function (vote) {
-            return vote.connectionKey != conn.key;
-        });
-        party.votesToSkipCurrentTrack = remainingVotes;
         updateGuests();
     });
     conn.on('error', function (err) {

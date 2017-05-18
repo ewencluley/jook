@@ -8,7 +8,7 @@
     <script src="bower_components/angular-route/angular-route.min.js"></script>
     <script src="bower_components/angular-bootstrap/ui-bootstrap-tpls.js"></script>
     <script src="bower_components/angular-cookies/angular-cookies.min.js"></script>
-    <script src="http://jook.local:6680/mopidy/mopidy.min.js"></script>
+    <script src="bower_components/mopidy.js-bower/dist/mopidy.min.js"></script>
     <script src="angular_app.js"></script>
 
     <link type="text/css" rel="stylesheet" href="bower_components/bootstrap/dist/css/bootstrap.min.css"/>
@@ -46,7 +46,7 @@
         <div class="col-xs-12">
 
             <i class="fa fa-music nowPlayingSymbol"></i>
-            <div id="nowplaying" ng-class="{scrollleft: (party.currentTrack.name + ' by ' + party.currentTrack.artists[0].name).length > 45 }"><p>{{party.currentTrack.name}} by {{party.currentTrack.artists[0].name}}</p>
+            <div id="nowplaying"><p>{{party.currentTrack.name}} by {{party.currentTrack.artists[0].name}}</p>
             </div>
         </div>
     </div>
@@ -80,11 +80,11 @@
         <div class="row">
 
             <div class="col-xs-12">
-                <button type="button" class="btn btn-default" ng-click="$ctrl.openGuestlist()"><i
-                        class="fa fa-list"></i>Tracks
+                <button type="button" class="btn-lg btn-primary" ng-click="$ctrl.openGuestlist()"><i
+                        class="fa fa-list"></i>
                 </button>
-                <button type="button" class="btn btn-default" ng-click="$ctrl.openPlaylist()"><i
-                        class="fa fa-user"></i>Guests
+                <button type="button" class="btn-lg btn-primary" ng-click="$ctrl.openPlaylist()"><i
+                        class="fa fa-user"></i>
                 </button>
             </div>
         </div>

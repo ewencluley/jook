@@ -5,7 +5,7 @@ jookApp.config(['$locationProvider', function ($locationProvider) {
 jookApp.run(['$rootScope', '$location', function ($root, $location) {
     $root.$on('$routeChangeStart', function (e, curr, prev) {
         if (curr.$$route && curr.$$route.resolve) {
-            // Show a loading message until promises aren't resolved
+            // Show a loading message until promises are resolved
             $root.loadingView = true;
         }
     });
@@ -40,7 +40,7 @@ jookApp.controller('PartyController', function PartyController($scope, $http, $h
     $scope.browse = {};
     $scope.browse.stack = [];
     var mopidy = new Mopidy({
-        webSocketUrl: "ws://jook.local:6680/mopidy/ws/",
+        webSocketUrl: "ws://"+window.location.hostname+":6680/mopidy/ws/",
         callingConvention: "by-position-or-by-name"
     });
     mopidy.connect();
@@ -74,8 +74,7 @@ jookApp.controller('PartyController', function PartyController($scope, $http, $h
         }
         $scope.$apply();
     }
-    //$scope.party = party;
-    // $scope.partysettings = JSON.parse(JSON.stringify(party));
+
     $scope.userUUID = $cookies.get('userUUID');
     $scope.updateParty = function () {
         $scope.callPartyService('PUT');
@@ -102,11 +101,6 @@ jookApp.controller('PartyController', function PartyController($scope, $http, $h
             $rootScope.$broadcast("alert", {status: response.status, message: response.data.message});
         });
     }
-    $scope.voteToSkip = function(){
-        var voteToSkip = {command: "voteToSkip", uri: $scope.party.currentTrack.uri}
-        connection.send(JSON.stringify(voteToSkip));
-        console.log(($scope.party.votesToSkipCurrentTrack.length/$scope.party.guests.length)*100 / $scope.party.config.votesToSkip.value);
-    };
 
     $scope.$on("voteToPlayNext", function(event, uri){
         var voteToPlayNext = {command: "voteToPlayNext", uri: uri}
@@ -123,7 +117,7 @@ jookApp.controller('PartyController', function PartyController($scope, $http, $h
         $scope.search.inprogress = true;
         $http.get("/api/v1/media?q=" + query)
             .then(function (response) {
-                $scope.search.results = response.data[0];
+                $scope.search.results = response.data;
                 $scope.search.inprogress = false;
                 if($scope.search && $scope.search.results && $scope.party.tracklist){
                     $scope.search.playing = findPlaying($scope.search.results, $scope.party.tracklist);
@@ -150,8 +144,10 @@ jookApp.controller('PartyController', function PartyController($scope, $http, $h
         $anchorScroll();
     };
     $scope.$on("browse", function (event, browseUri) {
+        $anchorScroll();
         try{
             mopidy.library.browse({uri:browseUri}).then(function(response){
+                console.log("Found stuff for URI.", response);
                 $scope.browse.stack.push(browseUri);
                 var albums = response.filter(function(ref){
                     return ref.type == "album";
@@ -173,6 +169,7 @@ jookApp.controller('PartyController', function PartyController($scope, $http, $h
                 $scope.$apply();
             });
         }catch (err){
+            console.log(err)
             $location.url("/");
         }
 

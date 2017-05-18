@@ -1,13 +1,18 @@
 <form ng-submit="performSearch(query)" class="input-group well" id="adv-search">
-    <input type="text" class="form-control" placeholder="Search for music!" ng-model="query"/>
+    <input type="text" class="form-control clearable" placeholder="Search for music!" ng-model="query"/>
 
+    <span id="searchclear" class="form-control-clear glyphicon glyphicon-remove form-control-feedback" ng-class="{'hidden': query.length == 0 }"></span>
     <div class="input-group-btn">
         <div class="btn-group" role="group">
-            <button type="submit" class="btn btn-primary"><span
+            <button type="submit" class="btn btn-primary">
+
+                <span
                     ng-class="{'fa fa-search':!search.inprogress, 'fa fa-spinner fa-spin':search.inprogress}"
-                    aria-hidden="true"></span></button>
+                    aria-hidden="true"></span>
+            </button>
         </div>
     </div>
+
 </form>
 <div class="col-xs-12" id="searchResults">
     <uib-tabset active="active" id="artistalbumtrack-tabs">
