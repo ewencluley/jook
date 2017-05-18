@@ -32,10 +32,6 @@ jookApp.config(function ($routeProvider) {
 jookApp.controller('PartyController', function PartyController($scope, $http, $httpParamSerializerJQLike, $rootScope, $location, $cookies, $anchorScroll) {
     var connection = new WebSocket("ws://" + window.location.hostname + ":8001");
 
-    $scope.$on("Login", function(event, args){
-
-    });
-
     $scope.playing = {};
     $scope.browse = {};
     $scope.browse.stack = [];
@@ -229,19 +225,6 @@ jookApp.controller('SearchController', function SearchController($scope, $locati
     $scope.browseTo = function (uri) {
         $location.url("/browse/"+uri);
     }
-});
-
-jookApp.controller('AlertController', function AlertController($scope) {
-
-    $scope.alerts = [];
-
-    $scope.$on("alert", function (event, args) {
-        $scope.alerts.push({msg: args.message});
-    });
-
-    $scope.closeAlert = function (index) {
-        $scope.alerts.splice(index, 1);
-    };
 });
 
 jookApp.controller('ModalDemoCtrl', function ($uibModal, $log, $document, $scope) {

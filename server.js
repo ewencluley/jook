@@ -107,44 +107,10 @@ var gatherPartyInfo = function () {
         party.currentTrack = track;
         updateGuests();
     });
-}
+};
 
 var party;
 var rootPath = "/api/v1";
-/* Guest Login */
-// app.post(rootPath + '/login', function (req, res) {
-//     var userUUID = uuidV4();
-//     if (!party) {
-//         res.status(404).send({errorCode: 404, message: "There is no party to join"});
-//         return;
-//     } else if (party.guests.filter(function (guest) {
-//             return guest.username == req.body.username;
-//         })[0]) {
-//         res.status(403).send({errorCode: 403, message: "User is already logged in."});
-//         return;
-//     } else {
-//
-//         var guest = {username: req.body.username, password: userUUID};
-//         party.guests.push(guest);
-//         var currentState = party;
-//
-//
-//         var printCurrentTrack = function (track) {
-//             if (track) {
-//                 currentState.currentTrack = track;
-//                 console.log("Currently playing:", track.name, "by", track.artists[0].name, "from", track.album.name);
-//
-//             } else {
-//                 console.log("No current track");
-//             }
-//             updateGuests();
-//             res.send(JSON.stringify(guest));
-//         };
-//         if (mopidy.playback) {
-//             mopidy.playback.getCurrentTrack().done(printCurrentTrack);
-//         }
-//     }
-// });
 var votesToPlayNext = {};
 function voteToPlayNext(votersGUID, uri) {
     if (party.votedThisSong.indexOf(votersGUID) == -1) {
@@ -163,28 +129,6 @@ function voteToPlayNext(votersGUID, uri) {
         console.log(votersGUID, "has already voted");
     }
 }
-
-// function voteToSkip(votersConnectionKey, votersUsername) {
-//     // console.log(votersConnectionKey, "voted to skip");
-//     // var guest = party.guests.filter(function (guest) {
-//     //     return guest.connectionId == votersConnectionKey;
-//     // });
-//     // var vote = {connectionKey: votersConnectionKey, username: votersUsername};
-//     // if (party.votesToSkipCurrentTrack.indexOf(vote) != -1) {
-//     //     console.log(votersConnectionKey, "has already voted to skip, vote ignored")
-//     // } else {
-//     //     party.votesToSkipCurrentTrack.push(vote);
-//     //     console.log(votersConnectionKey, "voted to skip registered");
-//     //     if ((party.config.votesToSkip.unit == "votes" && party.votesToSkipCurrentTrack.length >= party.config.votesToSkip.value)
-//     //         || (party.config.votesToSkip.unit == "%" && (party.votesToSkipCurrentTrack.length / party.guests.length) >= party.config.votesToSkip.value / 100)) {
-//     //         console.log("Skipping track due to enough votes.", party.votesToSkipCurrentTrack, "voted to skip.");
-//     //         mopidy.playback.next();
-//     //         party.votesToSkipCurrentTrack = [];
-//     //     }
-//     // }
-//     // return;
-//     mopidy.playback.next();
-// }
 
 
 function playTrack(connectionKey, uri) {
@@ -291,8 +235,7 @@ app.get(rootPath + '/media', function (req, res) {
             artists:artists,
             albums:albums,
             tracks:tracks
-        }
-
+        };
 
         console.log("tracks:", totalTracks, ", artists:", totalArtists, ", albums:", totalAlbums);
         res.send(JSON.stringify(response));
@@ -307,18 +250,6 @@ app.get(rootPath + '/media/:uri', function (req, res) {
         var resultArr = resultDict["spotify:album:1hJ4ACIEdOmBJOZWyleWnf"]
         console.log(resultArr);
     });
-    // mopidy.library.browse(uri).then(function (results) {
-    //
-    //     tracks = results.filter(function (item) {
-    //         return item.type == 'track'
-    //     });
-    //     albums = results.filter(function (item) {
-    //         return item.type == 'album'
-    //     });
-    // }).then(function () {
-    //     var response = [{tracks: tracks, albums: albums}];
-    //     res.send(JSON.stringify(response));
-    // })
 });
 
 /* Create a new party */
@@ -340,19 +271,6 @@ function createParty(host) {
     console.log("New party hosted by", party.host.username);
 }
 
-/* Update party settings */
-app.put(rootPath + '/party', function (req, res) {
-
-    if (!party) {
-        res.status(404).send({errorCode: 404, message: "There is no current party."});
-    } else {
-        party.host = {username: req.body.username, password: req.body.password};
-        console.log("Party Updated.  Host is", party.host.username);
-        res.send(JSON.stringify(party));
-    }
-
-});
-
 app.get('*', function (req, res) {
     res.sendFile(path.join(__dirname, '/public', 'index.html'));
 });
@@ -363,7 +281,6 @@ app.listen(port, function () {
 });
 
 var ws = require("nodejs-websocket")
-
 var connections = [];
 
 function updateGuests() {
@@ -405,7 +322,7 @@ var server = ws.createServer(function (conn) {
         }
         gatherPartyInfo();
 
-    })
+    });
     conn.on("close", function (code, reason) {
         console.log("Connection", conn.key, "closed. Code:", code, ", reason:", reason);
 
