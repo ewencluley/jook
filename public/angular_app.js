@@ -160,6 +160,9 @@ jookApp.controller('PartyController', function PartyController($scope, $http, $h
                 }
                 $scope.browse.results.tracks = tracks;
                 $scope.browse.results.albums = albums;
+                if($scope.browse && $scope.browse.results && $scope.party.tracklist){
+                    $scope.browse.playing = findPlaying($scope.browse.results, $scope.party.tracklist);
+                }
                 console.log("browse done:", response);
                 $scope.$apply();
             });

@@ -1,7 +1,9 @@
 <form ng-submit="performSearch(query)" class="input-group well" id="adv-search">
-    <input type="text" class="form-control clearable" placeholder="Search for music!" ng-model="query"/>
+    <input type="text" class="form-control clearable" placeholder="Search for music!" ng-model="query" />
 
-    <span id="searchclear" class="form-control-clear glyphicon glyphicon-remove form-control-feedback" ng-class="{'hidden': query.length == 0 }"></span>
+    <span id="searchclear" ng-class="{'hidden': query.length < 1 || !query }">
+        <a class="clear fa fa-close" data-ng-click="query = '' "></a>
+    </span>
     <div class="input-group-btn">
         <div class="btn-group" role="group">
             <button type="submit" class="btn btn-primary">
