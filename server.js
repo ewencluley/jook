@@ -30,6 +30,7 @@ app.use(bodyParser.urlencoded({'extended': 'true'}));            // parse applic
 app.use(bodyParser.json());                                     // parse application/json
 app.use(bodyParser.json({type: 'application/vnd.api+json'})); // parse application/vnd.api+json as json
 app.use(methodOverride());
+var networkInterfaceDetails = require('os').networkInterfaces();
 
 var mopidy = new Mopidy({
     webSocketUrl: "ws://localhost:6680/mopidy/ws/"
@@ -264,6 +265,9 @@ function createParty(host) {
     party.config.votesToSkip = {};
     party.config.votesToSkip.value = 35;
     party.config.votesToSkip.unit = "%";
+    if(networkInterfaceDetails.wlan0 && networkInterfaceDetails.wlan0[0]){
+        party.jookip = networkInterfaceDetails.wlan0[0].address;
+    }
 
     party.host = {username: host.username, connectionKey: host.connectionKey};
     party.guests = [];
@@ -274,7 +278,7 @@ function createParty(host) {
 app.get('*', function (req, res) {
     res.sendFile(path.join(__dirname, '/public', 'index.html'));
 });
-const port = process.env.DEBUG ? 3000 : 80
+const port = process.env.DEBUG ? 3000 : 3000
 app.listen(port, function () {
     debug('Debugging working, jook starting')
     console.log('Example app listening on port', port)

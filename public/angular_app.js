@@ -75,6 +75,7 @@ jookApp.controller('PartyController', function PartyController($scope, $http, $h
     $scope.updateParty = function () {
         $scope.callPartyService('PUT');
     };
+
     $scope.createParty = function () {
         $scope.callPartyService('POST');
     };
@@ -97,7 +98,6 @@ jookApp.controller('PartyController', function PartyController($scope, $http, $h
             $rootScope.$broadcast("alert", {status: response.status, message: response.data.message});
         });
     }
-
     $scope.$on("voteToPlayNext", function(event, uri){
         var voteToPlayNext = {command: "voteToPlayNext", uri: uri}
         connection.send(JSON.stringify(voteToPlayNext));
@@ -261,6 +261,22 @@ jookApp.controller('ModalDemoCtrl', function ($uibModal, $log, $document, $scope
         });
     }
 
+    $ctrl.showJookIp = function () {
+        $uibModal.open({
+            animation: $ctrl.animationsEnabled,
+            ariaLabelledBy: 'info-modal-title',
+            ariaDescribedBy: 'info-modal-body',
+            templateUrl: 'infoModal.html',
+            controller: 'InfoController',
+            controllerAs: '$ctrl',
+            resolve: {
+                heading: function () {
+                    return "Information"
+                }
+            }
+        });
+    }
+
     $ctrl.openGuestlist = function (size, parentSelector) {
         var parentElem = parentSelector ?
             angular.element($document[0].querySelector('.modal-demo ' + parentSelector)) : undefined;
@@ -304,6 +320,16 @@ jookApp.controller('ListController', function ($uibModalInstance, $scope, $rootS
         $rootScope.$broadcast("voteToPlayNext", uri);
         $ctrl.items.userVoted = true;
     };
+
+    $ctrl.cancel = function () {
+        $uibModalInstance.close();
+    };
+});
+
+jookApp.controller('InfoController', function ($uibModalInstance, $scope, $rootScope, heading) {
+    var $ctrl = this;
+
+    $scope.heading = heading;
 
     $ctrl.cancel = function () {
         $uibModalInstance.close();

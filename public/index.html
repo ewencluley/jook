@@ -46,11 +46,14 @@
         <div class="col-xs-12">
 
             <i class="fa fa-music nowPlayingSymbol"></i>
-            <div id="nowplaying"><p>{{party.currentTrack.name}} by {{party.currentTrack.artists[0].name}}</p>
+            <div id="nowplaying" ng-if="party.currentTrack"><p>{{party.currentTrack.name}} by
+                {{party.currentTrack.artists[0].name}}</p>
+            </div>
+            <div id="nowplaying" ng-if="!party.currentTrack"><p>Queue up a few tracks to get things started!</p>
             </div>
         </div>
     </div>
-    <div ng-controller="ModalDemoCtrl as $ctrl" class="pull-right">
+    <div ng-controller="ModalDemoCtrl as $ctrl">
         <script type="text/ng-template" id="listModal.html">
             <div class="modal-header">
                 <h3 class="modal-title" id="modal-title">{{heading}}</h3>
@@ -77,15 +80,57 @@
                 </button>
             </div>
         </script>
+        <script type="text/ng-template" id="infoModal.html">
+            <div class="modal-header">
+                <h3 class="modal-title" id="info-modal-title">{{heading}}</h3>
+            </div>
+            <div class="modal-body" id="info-modal-body">
+                <div>
+                    <p>Jook is currently in Beta. It is likely riddled with bugs! If you find any, would be awesome if
+                        you could log them <a href="https://github.com/ewencluley/jook/issues" target="_blank">here</a>
+                    </p>
+                    <div>
+                        <h3>How to use Jook</h3>
+                        <p>Search for tracks, artists and albums using the search bar at the top. Add tracks to the end
+                            of the queue by pressing them. Browse artists by pressing on them.
+                        <ul>
+                            <li>You can see whats coming up by viewing the track list. Press the
+                                <button type="button" class="btn-xs btn-primary" style="display: inline-block"><i
+                                        class="fa fa-list"></i></button>
+                                button at the bottom right
+                            </li>
+                            <li>Once per song you can vote for a track to be boosted to the top of the queue. Click the
+                                vote button when viewing the track list
+                            </li>
+                            <li>You can see who else has logged into Jook by pressing the
+                                <button type="button" class="btn-xs btn-primary" style="display: inline-block"><i
+                                        class="fa fa-user"></i></button>
+                                button at the bottom right
+                            </li>
+                        </ul>
+                        </p>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button class="btn btn-warning" type="button" ng-click="$ctrl.cancel()">Close
+                    </button>
+                </div>
+        </script>
         <div class="row">
 
             <div class="col-xs-12">
-                <button type="button" class="btn-lg btn-primary" ng-click="$ctrl.openGuestlist()"><i
-                        class="fa fa-list"></i>
-                </button>
-                <button type="button" class="btn-lg btn-primary" ng-click="$ctrl.openPlaylist()"><i
-                        class="fa fa-user"></i>
-                </button>
+                <div class="pull-left ipaddress">{{party.jookip}}</div>
+                <div class="pull-right">
+                    <button type="button" class="btn-lg btn-primary" ng-click="$ctrl.openGuestlist()"><i
+                            class="fa fa-list"></i>
+                    </button>
+                    <button type="button" class="btn-lg btn-primary" ng-click="$ctrl.openPlaylist()"><i
+                            class="fa fa-user"></i>
+                    </button>
+                    <button type="button" class="btn-lg btn-primary" ng-click="$ctrl.showJookIp()"><i
+                            class="fa fa-info-circle"></i>
+                    </button>
+                </div>
             </div>
         </div>
     </div>
